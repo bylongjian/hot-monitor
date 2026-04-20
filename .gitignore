@@ -1,0 +1,35 @@
+# ── Python ──────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# ── Secrets / Config ────────────────────────────────────────────
+.env
+# Keep .env.example (safe template)
+
+# ── Database ────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Logs ────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Frontend build output ────────────────────────────────────────
+frontend/dist/
+frontend/node_modules/
+
+# ── OS / Editor ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+*.swp
+*.swo
