@@ -16,10 +16,10 @@
 
 ## 2. 用户角色
 
-| 角色 | 描述 |
-|------|------|
-| 博主（主用户） | 配置关键词与监控范围，接收通知，查看热点 Dashboard |
-| AI Agent | 通过 Agent Skills 接口查询热点、添加监控，实现 AI 辅助监控 |
+| 角色           | 描述                                                       |
+| -------------- | ---------------------------------------------------------- |
+| 博主（主用户） | 配置关键词与监控范围，接收通知，查看热点 Dashboard         |
+| AI Agent       | 通过 Agent Skills 接口查询热点、添加监控，实现 AI 辅助监控 |
 
 ---
 
@@ -73,10 +73,10 @@
 
 ## 4. 通知需求
 
-| 通知渠道 | 优先级 | 说明 |
-|----------|--------|------|
+| 通知渠道     | 优先级       | 说明                            |
+| ------------ | ------------ | ------------------------------- |
 | 邮件（SMTP） | P0，必须实现 | 支持 Gmail、QQ 邮箱等 SMTP 配置 |
-| Webhook | P1，后续迭代 | 可对接 Telegram Bot、Bark、飞书 |
+| Webhook      | P1，后续迭代 | 可对接 Telegram Bot、Bark、飞书 |
 
 **通知内容**包含：热点标题、AI 摘要、来源链接、热度分、触发时间。
 
@@ -84,11 +84,11 @@
 
 ## 5. 数据来源
 
-| 来源 | 类型 | 说明 |
-|------|------|------|
-| Hacker News API | 免费公开 API | https://hacker-news.firebaseio.com/v0/ |
-| RSS 聚合 | RSS Feed | OpenAI Blog、Anthropic、Google DeepMind、HuggingFace、TechCrunch AI |
-| DuckDuckGo 搜索 | 无 Key 搜索 | 关键词实时搜索，用 ddg Python 库 |
+| 来源            | 类型         | 说明                                                                |
+| --------------- | ------------ | ------------------------------------------------------------------- |
+| Hacker News API | 免费公开 API | https://hacker-news.firebaseio.com/v0/                              |
+| RSS 聚合        | RSS Feed     | OpenAI Blog、Anthropic、Google DeepMind、HuggingFace、TechCrunch AI |
+| DuckDuckGo 搜索 | 无 Key 搜索  | 关键词实时搜索，用 ddg Python 库                                    |
 
 ---
 
@@ -106,13 +106,13 @@
 
 ## 7. 非功能需求
 
-| 需求 | 说明 |
-|------|------|
-| 轻量化 | 无需 Docker/Redis/Kafka；单进程运行 |
-| 易部署 | `pip install -r requirements.txt` + 填写 `.env` 即可运行 |
-| 配置化 | 通过 `.env` 文件配置所有敏感信息；扫描频率可在 UI 中调整 |
-| 安全性 | API Key 不硬编码；SMTP 密码环境变量注入 |
-| 可靠性 | 单次抓取失败不影响整体运行；错误写入日志 |
+| 需求     | 说明                                                               |
+| -------- | ------------------------------------------------------------------ |
+| 轻量化   | 无需 Docker/Redis/Kafka；单进程运行                                |
+| 易部署   | `pip install -r requirements.txt` + 填写 `.env` 即可运行           |
+| 配置化   | 通过 `.env` 文件配置所有敏感信息；扫描频率可在 UI 中调整           |
+| 安全性   | API Key 不硬编码；SMTP 密码环境变量注入                            |
+| 可靠性   | 单次抓取失败不影响整体运行；错误写入日志                           |
 | 开发体验 | VS Code 集成终端默认使用 **Git Bash**，保证 Shell 脚本跨平台一致性 |
 
 ---

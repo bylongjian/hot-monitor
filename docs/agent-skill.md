@@ -27,6 +27,7 @@ GET /api/v1/topics?limit=20&min_heat=5
 | min_heat | int | 最低热度过滤（1-10） |
 
 返回示例：
+
 ```json
 [
   {
@@ -50,8 +51,9 @@ POST /api/v1/topics/scan
 ```
 
 返回：
+
 ```json
-{"message": "扫描任务已触发，正在后台执行", "triggered": true}
+{ "message": "扫描任务已触发，正在后台执行", "triggered": true }
 ```
 
 ### 3. 关键词管理
@@ -70,6 +72,7 @@ GET /api/v1/settings/status
 ```
 
 返回：
+
 ```json
 {
   "scheduler_running": true,

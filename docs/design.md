@@ -34,18 +34,18 @@
 
 ### 1.2 技术栈
 
-| 层 | 技术 | 版本 | 理由 |
-|----|------|------|------|
-| 后端框架 | FastAPI | 0.115+ | 高性能异步，自动 OpenAPI 文档 |
-| ORM | SQLAlchemy + aiosqlite | 2.x | 异步 SQLite，零运维 |
-| 定时任务 | APScheduler | 4.x | 内嵌调度，支持动态添加/删除任务 |
-| AI 接入 | OpenRouter (requests) | - | 统一 API，`deepseek/deepseek-v3.2` |
-| RSS 解析 | feedparser | 6.x | 成熟稳定 |
-| 通知 | aiosmtplib | 3.x | 异步 SMTP |
-| 前端 | React (Vite) + TypeScript | 18 / 5.x | 现代前端，Vite 构建 |
-| 样式 | Tailwind CSS | 3.x | 高效定制 |
-| 前端状态 | TanStack Query | 5.x | 数据请求/缓存 |
-| 部署 | 单进程运行 | - | FastAPI 托管前端静态文件 |
+| 层       | 技术                      | 版本     | 理由                               |
+| -------- | ------------------------- | -------- | ---------------------------------- |
+| 后端框架 | FastAPI                   | 0.115+   | 高性能异步，自动 OpenAPI 文档      |
+| ORM      | SQLAlchemy + aiosqlite    | 2.x      | 异步 SQLite，零运维                |
+| 定时任务 | APScheduler               | 4.x      | 内嵌调度，支持动态添加/删除任务    |
+| AI 接入  | OpenRouter (requests)     | -        | 统一 API，`deepseek/deepseek-v3.2` |
+| RSS 解析 | feedparser                | 6.x      | 成熟稳定                           |
+| 通知     | aiosmtplib                | 3.x      | 异步 SMTP                          |
+| 前端     | React (Vite) + TypeScript | 18 / 5.x | 现代前端，Vite 构建                |
+| 样式     | Tailwind CSS              | 3.x      | 高效定制                           |
+| 前端状态 | TanStack Query            | 5.x      | 数据请求/缓存                      |
+| 部署     | 单进程运行                | -        | FastAPI 托管前端静态文件           |
 
 ---
 
@@ -104,37 +104,37 @@ hot-monitor/
 
 #### `keywords` — 关键词监控配置
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | INTEGER PK | 自增主键 |
-| keyword | TEXT UNIQUE | 关键词内容 |
-| enabled | BOOLEAN | 是否启用 |
-| last_checked_at | DATETIME | 最近一次检查时间 |
-| created_at | DATETIME | 创建时间 |
+| 字段            | 类型        | 说明             |
+| --------------- | ----------- | ---------------- |
+| id              | INTEGER PK  | 自增主键         |
+| keyword         | TEXT UNIQUE | 关键词内容       |
+| enabled         | BOOLEAN     | 是否启用         |
+| last_checked_at | DATETIME    | 最近一次检查时间 |
+| created_at      | DATETIME    | 创建时间         |
 
 #### `topics` — 发现的热点内容
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | INTEGER PK | 自增主键 |
-| title | TEXT | 热点标题 |
-| summary | TEXT | AI 生成摘要（中文，≤100字） |
-| source_url | TEXT | 原始链接 |
-| source_name | TEXT | 来源名称（HN / OpenAI Blog 等） |
-| heat_score | INTEGER | AI 热度评分（1-10） |
-| tags | TEXT | JSON 数组，如 ["GPT-5", "OpenAI"] |
-| is_notified | BOOLEAN | 是否已发送通知 |
-| keyword_id | INTEGER FK | 关联关键词（可为空，自动发现则为空） |
-| raw_content | TEXT | 原始抓取内容快照 |
-| discovered_at | DATETIME | 发现时间 |
+| 字段          | 类型       | 说明                                 |
+| ------------- | ---------- | ------------------------------------ |
+| id            | INTEGER PK | 自增主键                             |
+| title         | TEXT       | 热点标题                             |
+| summary       | TEXT       | AI 生成摘要（中文，≤100字）          |
+| source_url    | TEXT       | 原始链接                             |
+| source_name   | TEXT       | 来源名称（HN / OpenAI Blog 等）      |
+| heat_score    | INTEGER    | AI 热度评分（1-10）                  |
+| tags          | TEXT       | JSON 数组，如 ["GPT-5", "OpenAI"]    |
+| is_notified   | BOOLEAN    | 是否已发送通知                       |
+| keyword_id    | INTEGER FK | 关联关键词（可为空，自动发现则为空） |
+| raw_content   | TEXT       | 原始抓取内容快照                     |
+| discovered_at | DATETIME   | 发现时间                             |
 
 #### `settings` — 系统配置（KV表）
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| key | TEXT PK | 配置键 |
-| value | TEXT | 配置值（JSON序列化） |
-| updated_at | DATETIME | 更新时间 |
+| 字段       | 类型     | 说明                 |
+| ---------- | -------- | -------------------- |
+| key        | TEXT PK  | 配置键               |
+| value      | TEXT     | 配置值（JSON序列化） |
+| updated_at | DATETIME | 更新时间             |
 
 ---
 
@@ -174,11 +174,13 @@ GET  /api/v1/settings/status      # 获取调度器状态
 #### POST /api/v1/keywords
 
 Request:
+
 ```json
 { "keyword": "GPT-5", "enabled": true }
 ```
 
 Response `201`:
+
 ```json
 {
   "id": 1,
@@ -222,6 +224,7 @@ Body:
 ### 5.2 AI 分析 Prompt 设计
 
 **热点分析 Prompt（系统提示）**：
+
 ```
 你是一位专业的科技媒体编辑，擅长识别 AI 领域的真实热点。
 分析给定的内容，返回 JSON 格式：
@@ -276,6 +279,7 @@ GET https://hacker-news.firebaseio.com/v0/item/{id}.json
 ### 6.3 DuckDuckGo 搜索
 
 使用 `duckduckgo_search` Python 库（无需 API Key）：
+
 ```python
 from duckduckgo_search import DDGS
 
@@ -309,6 +313,7 @@ scheduler.add_schedule(
 ```
 
 调度器在 FastAPI 的 `lifespan` 中启动/关闭：
+
 ```python
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -332,7 +337,7 @@ async def send_email(subject: str, body_html: str):
     msg["Subject"] = subject
     msg["From"] = settings.SMTP_USER
     msg["To"] = settings.NOTIFY_EMAIL
-    
+
     await aiosmtplib.send(
         msg,
         hostname=settings.SMTP_HOST,
@@ -357,35 +362,38 @@ async def send_email(subject: str, body_html: str):
 
 ### 9.2 徽章体系（Badge System）
 
-| 徽章 | 触发条件 | 颜色 |
-|------|----------|------|
-| CRITICAL | heat_score ≥ 9 | 红 `#f87171` |
-| HIGH | heat_score ≥ 7 | 橙 `#fb923c` |
-| MED | heat_score ≥ 5 | 黄 `#fbbf24` |
-| LOW | heat_score < 5 | 灰 `#94a3b8` |
-| 标签 Tag | tags 数组内容 | 蓝 `#93c5fd` |
+| 徽章               | 触发条件        | 颜色         |
+| ------------------ | --------------- | ------------ |
+| CRITICAL           | heat_score ≥ 9  | 红 `#f87171` |
+| HIGH               | heat_score ≥ 7  | 橙 `#fb923c` |
+| MED                | heat_score ≥ 5  | 黄 `#fbbf24` |
+| LOW                | heat_score < 5  | 灰 `#94a3b8` |
+| 标签 Tag           | tags 数组内容   | 蓝 `#93c5fd` |
 | 可信（关键词命中） | keyword_id 非空 | 绿 `#86efac` |
 
 ### 9.3 响应式断点
 
-| 断点 | 布局 |
-|------|------|
-| < 768px（手机） | 单列，顶部 + 底部双 Tab 导航 |
+| 断点            | 布局                                  |
+| --------------- | ------------------------------------- |
+| < 768px（手机） | 单列，顶部 + 底部双 Tab 导航          |
 | ≥ 768px（桌面） | 单列（max-width 约束），顶部 Tab 导航 |
 
 ### 9.4 页面模块
 
 **Dashboard（热点雷达）**
+
 - 四张统计卡：总热点 / 今日新增 / 紧急热点（≥9分）/ 监控词数量
 - 排序标签页（最新发现 / 热度综合 / 按来源）+ 筛选芯片（全部 / 高≥7 / 极热≥9）
 - 热点卡片：徽章行（等级 + 来源头像 + 标签 + 可信标记 + 热分）→ 标题 → AI 摘要 → 展开原始内容
 
 **Keywords（关键词管理）**
+
 - 添加输入框（Enter 键提交）
 - 关键词卡片：状态开关、命中数、最后检查时间
 - 展开命中历史列表
 
 **Settings（设置）**
+
 - AI 配置：API Key（密码框）、AI 模型下拉（默认 `deepseek/deepseek-v3.2`）
 - 扫描设置：间隔滑块（10m - 6h）、通知热度阈值滑块（1-10）
 - 邮件通知：SMTP 快速预设（Gmail/QQ/163）、主机/端口/账号/密码、收件箱、测试按钮
@@ -407,22 +415,22 @@ async def send_email(subject: str, body_html: str):
 
 ### Phase 1：Web 版（本次完成）
 
-| 步骤 | 内容 |
-|------|------|
-| Step 1 | 项目结构 + 依赖 + 环境配置 |
-| Step 2 | 数据库模型 + SQLite 初始化 |
-| Step 3 | RSS/HN/DDG 数据抓取服务 |
-| Step 4 | OpenRouter AI 分析模块 |
-| Step 5 | APScheduler 定时任务 |
-| Step 6 | 邮件通知服务 |
-| Step 7 | FastAPI 完整路由 |
+| 步骤   | 内容                                            |
+| ------ | ----------------------------------------------- |
+| Step 1 | 项目结构 + 依赖 + 环境配置                      |
+| Step 2 | 数据库模型 + SQLite 初始化                      |
+| Step 3 | RSS/HN/DDG 数据抓取服务                         |
+| Step 4 | OpenRouter AI 分析模块                          |
+| Step 5 | APScheduler 定时任务                            |
+| Step 6 | 邮件通知服务                                    |
+| Step 7 | FastAPI 完整路由                                |
 | Step 8 | React 前端 Dashboard（HotPulse 深色仪表盘风格） |
-| Step 9 | 前后端联调 + 测试 |
+| Step 9 | 前后端联调 + 测试                               |
 
 ### Phase 2：Agent Skills（后续迭代）
 
-| 步骤 | 内容 |
-|------|------|
+| 步骤    | 内容                                              |
+| ------- | ------------------------------------------------- |
 | Step 10 | 封装 `.prompt.md` 技能文件（调用 Phase 1 的 API） |
 
 ---
@@ -463,6 +471,7 @@ open http://localhost:8000
 ```
 
 开发时前端 HMR：
+
 ```bash
 cd frontend && npm install && npm run dev
 ```
