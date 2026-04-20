@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { topicsApi, keywordsApi } from "../api/client";
 import { HotCard } from "../components/HotCard";
+import { Spotlight } from "../components/ui/spotlight";
+import { BackgroundGradient } from "../components/ui/background-gradient";
 import {
   Activity,
   Clock,
@@ -17,7 +19,6 @@ type SortKey = "newest" | "heat" | "source";
 interface StatCardProps {
   icon: React.ElementType;
   iconColor: string;
-  iconBg: string;
   label: string;
   value: number;
   valueColor: string;
@@ -27,38 +28,44 @@ interface StatCardProps {
 function StatCard({
   icon: Icon,
   iconColor,
-  iconBg,
   label,
   value,
   valueColor,
   accent,
 }: StatCardProps) {
-  return (
+  const inner = (
     <div
-      className="rounded-xl p-4 border transition-all"
+      className="rounded-xl p-4 h-full"
       style={{
         background:
-          accent && value > 0
-            ? "rgba(239,68,68,0.06)"
-            : "rgba(255,255,255,0.028)",
-        borderColor:
-          accent && value > 0
-            ? "rgba(239,68,68,0.2)"
-            : "rgba(255,255,255,0.072)",
+          accent && value > 0 ? "rgba(239,68,68,0.05)" : "rgba(3,7,18,0.8)",
       }}
     >
-      <div
-        className="flex items-center gap-2 mb-3"
-        style={{ color: "rgba(148,163,184,0.65)", fontSize: "12px" }}
-      >
-        <span
-          className={`w-6 h-6 rounded-md flex items-center justify-center ${iconBg}`}
-        >
+      <div className="flex items-center gap-2 mb-3 text-slate-500 text-xs">
+        <span className="w-6 h-6 rounded-lg flex items-center justify-center bg-white/[0.04]">
           <Icon size={13} className={iconColor} />
         </span>
         {label}
       </div>
-      <div className={`text-3xl font-bold ${valueColor}`}>{value}</div>
+      <div
+        className={`text-3xl font-bold tracking-tight font-mono ${valueColor}`}
+      >
+        {value}
+      </div>
+    </div>
+  );
+
+  if (accent && value > 0) {
+    return (
+      <BackgroundGradient containerClassName="rounded-xl">
+        {inner}
+      </BackgroundGradient>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-white/[0.06] overflow-hidden">
+      {inner}
     </div>
   );
 }
@@ -130,13 +137,15 @@ export function Dashboard() {
   };
 
   return (
-    <div>
+    <div className="relative">
+      {/* Spotlight background effect */}
+      <Spotlight className="hidden md:block -top-40" />
+
       {/* ── Stats Row ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 relative z-10">
         <StatCard
           icon={Activity}
           iconColor="text-blue-400"
-          iconBg="bg-blue-500/10"
           label="总热点"
           value={topics.length}
           valueColor="text-blue-300"
@@ -144,7 +153,6 @@ export function Dashboard() {
         <StatCard
           icon={Clock}
           iconColor="text-cyan-400"
-          iconBg="bg-cyan-500/10"
           label="今日新增"
           value={todayCount}
           valueColor="text-cyan-300"
@@ -152,7 +160,6 @@ export function Dashboard() {
         <StatCard
           icon={AlertTriangle}
           iconColor="text-red-400"
-          iconBg="bg-red-500/10"
           label="紧急热点"
           value={urgentCount}
           valueColor="text-red-400"
@@ -160,34 +167,28 @@ export function Dashboard() {
         />
         <StatCard
           icon={Tag}
-          iconColor="text-green-400"
-          iconBg="bg-green-500/10"
+          iconColor="text-emerald-400"
           label="监控词"
           value={activeKeywords}
-          valueColor="text-green-400"
+          valueColor="text-emerald-400"
         />
       </div>
 
       {/* ── Section Header ── */}
-      <div className="flex items-center justify-between mb-4">
-        <h2
-          className="flex items-center gap-2 font-semibold text-white"
-          style={{ fontSize: "15px" }}
-        >
+      <div className="flex items-center justify-between mb-4 relative z-10">
+        <h2 className="flex items-center gap-2 font-semibold text-white text-[15px]">
           <Flame size={15} className="text-orange-400" />
           实时热点流
         </h2>
-        <span style={{ fontSize: "12px", color: "rgba(100,116,139,0.7)" }}>
-          每 30 分钟自动更新
-        </span>
+        <span className="text-xs text-slate-600">每 30 分钟自动更新</span>
       </div>
 
       {/* ── Sort + Filter Bar ── */}
       <div
-        className="flex items-center gap-1 mb-4 overflow-x-auto pb-1 rounded-xl px-3 py-2"
+        className="flex items-center gap-1 mb-4 overflow-x-auto pb-1 rounded-xl px-3 py-2 relative z-10"
         style={{
-          background: "rgba(255,255,255,0.025)",
-          border: "1px solid rgba(255,255,255,0.065)",
+          background: "rgba(255,255,255,0.02)",
+          border: "1px solid rgba(255,255,255,0.05)",
         }}
       >
         {/* Sort tabs */}
@@ -275,30 +276,30 @@ export function Dashboard() {
 
       {/* ── Topic List ── */}
       {isLoading ? (
-        <div className="space-y-2">
+        <div className="space-y-2 relative z-10">
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
               className="h-28 rounded-xl animate-pulse"
-              style={{ background: "rgba(255,255,255,0.03)" }}
+              style={{ background: "rgba(255,255,255,0.02)" }}
             />
           ))}
         </div>
       ) : filteredTopics.length === 0 ? (
         <div
-          className="text-center py-20 rounded-xl"
+          className="text-center py-20 rounded-xl relative z-10"
           style={{
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(255,255,255,0.015)",
+            border: "1px solid rgba(255,255,255,0.05)",
           }}
         >
-          <Flame size={32} className="mx-auto mb-3 text-orange-500/30" />
-          <p className="text-sm" style={{ color: "rgba(100,116,139,0.7)" }}>
-            暂无热点数据，请在顶部点击「立即扫描」
+          <Flame size={32} className="mx-auto mb-3 text-orange-500/20" />
+          <p className="text-sm text-slate-600">
+            暂无热点数据，点击顶部「立即扫描」开始追踪
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 relative z-10">
           {filteredTopics.map((topic, i) => (
             <HotCard key={topic.id} topic={topic} animate={i < 5} />
           ))}

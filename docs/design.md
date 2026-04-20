@@ -1,8 +1,8 @@
 # hot-monitor 技术方案文档
 
-> 版本：v1.1  
+> 版本：v1.2  
 > 日期：2026-04-20  
-> 状态：已确认，参考最新 API 文档编写
+> 状态：Phase 1 已完成，UI 已重构为 Aceternity 风格
 
 ---
 
@@ -34,18 +34,22 @@
 
 ### 1.2 技术栈
 
-| 层       | 技术                      | 版本     | 理由                               |
-| -------- | ------------------------- | -------- | ---------------------------------- |
-| 后端框架 | FastAPI                   | 0.115+   | 高性能异步，自动 OpenAPI 文档      |
-| ORM      | SQLAlchemy + aiosqlite    | 2.x      | 异步 SQLite，零运维                |
-| 定时任务 | APScheduler               | 4.x      | 内嵌调度，支持动态添加/删除任务    |
-| AI 接入  | OpenRouter (requests)     | -        | 统一 API，`deepseek/deepseek-v3.2` |
-| RSS 解析 | feedparser                | 6.x      | 成熟稳定                           |
-| 通知     | aiosmtplib                | 3.x      | 异步 SMTP                          |
-| 前端     | React (Vite) + TypeScript | 18 / 5.x | 现代前端，Vite 构建                |
-| 样式     | Tailwind CSS              | 3.x      | 高效定制                           |
-| 前端状态 | TanStack Query            | 5.x      | 数据请求/缓存                      |
-| 部署     | 单进程运行                | -        | FastAPI 托管前端静态文件           |
+| 层       | 技术                          | 版本      | 理由                               |
+| -------- | ----------------------------- | --------- | ---------------------------------- |
+| 后端框架 | FastAPI                       | 0.115+    | 高性能异步，自动 OpenAPI 文档      |
+| ORM      | SQLAlchemy + aiosqlite        | 2.x       | 异步 SQLite，零运维                |
+| 定时任务 | APScheduler                   | 4.x       | 内嵌调度，支持动态添加/删除任务    |
+| AI 接入  | OpenRouter (requests)         | -         | 统一 API，`deepseek/deepseek-v3.2` |
+| RSS 解析 | feedparser                    | 6.x       | 成熟稳定                           |
+| 通知     | aiosmtplib                    | 3.x       | 异步 SMTP                          |
+| 前端     | React (Vite) + TypeScript     | 19 / 8.x  | 现代前端，Vite 8 构建              |
+| 样式     | Tailwind CSS                  | 3.4       | 高效定制                           |
+| UI 动效  | Aceternity UI + Framer Motion | 12.x      | 科技感组件 + 流畅动画引擎          |
+| 工具库   | clsx + tailwind-merge         | 2.x / 3.x | className 合并工具                 |
+| 前端状态 | TanStack Query                | 5.x       | 数据请求/缓存                      |
+| 路由     | React Router                  | 7.x       | SPA 路由                           |
+| 图标     | Lucide React                  | 1.x       | 轻量 SVG 图标库                    |
+| 部署     | 单进程运行                    | -         | FastAPI 托管前端静态文件           |
 
 ---
 
@@ -76,21 +80,28 @@ hot-monitor/
 ├── frontend/
 │   ├── index.html
 │   ├── vite.config.ts
-│   ├── tailwind.config.ts
+│   ├── tailwind.config.js
 │   ├── package.json
 │   └── src/
 │       ├── main.tsx
 │       ├── App.tsx
+│       ├── index.css           # Tailwind 入口 + 自定义深色主题
 │       ├── api/               # axios 请求封装
+│       ├── lib/
+│       │   └── utils.ts       # cn() 工具（clsx + tailwind-merge）
 │       ├── pages/
-│       │   ├── Dashboard.tsx  # 热点流主页
+│       │   ├── Dashboard.tsx  # 热点流主页（Spotlight 背景）
 │       │   ├── Keywords.tsx   # 关键词管理
 │       │   └── Settings.tsx   # 通知/系统设置
 │       └── components/
-│           ├── HotCard.tsx    # 热点卡片
-│           ├── HeatBadge.tsx  # 热度徽章
-│           ├── Terminal.tsx   # 扫描日志终端组件
-│           └── Layout.tsx     # 页面布局
+│           ├── HotCard.tsx    # 热点卡片（毛玻璃 + 动画展开）
+│           ├── Layout.tsx     # 页面布局（SparklesCore + MovingBorder）
+│           └── ui/            # Aceternity UI 组件库
+│               ├── background-gradient.tsx
+│               ├── moving-border.tsx
+│               ├── sparkles.tsx
+│               ├── spotlight.tsx
+│               └── text-generate-effect.tsx
 ├── .env.example
 ├── requirements.txt
 └── README.md
@@ -352,33 +363,49 @@ async def send_email(subject: str, body_html: str):
 
 ## 9. 前端 UI 设计规格
 
-### 9.1 设计风格：HotPulse 深色仪表盘
+### 9.1 设计风格：HotPulse 深空科技仪表盘
 
-- **背景色**：`#0b0f1a`（深蓝黑）
-- **品牌名**：HotPulse（顶部导航栏，Logo 使用蓝→青渐变 Zap 图标）
-- **卡片**：半透明（`rgba(255,255,255,0.028)`），边框 `rgba(255,255,255,0.072)`，轻微圆角（`border-radius: 14px`）
-- **顶部导航**：`rgba(11,15,26,0.92)` + `backdrop-blur`，固定在顶部；包含品牌、Tab 导航、手动扫描按钮、通知铃铛（徽章显示监控词数量）
-- **移动端**：同时保留底部 Tab 导航（热点雷达 / 监控词 / 设置）
+- **背景色**：`#030712`（纯黑深空），叠加 60px 网格线（`rgba(255,255,255,0.02)`）
+- **品牌名**：HotPulse（顶部导航栏，渐变文字 `from-blue-400 via-cyan-400 to-blue-300`，Logo 上方叠加 SparklesCore 粒子效果）
+- **卡片**：极低透明度背景 `rgba(255,255,255,0.025)` + 边框 `0.06` 不透明度 + 圆角 14px，悬停时微光效果
+- **顶部导航**：`rgba(3,7,18,0.88)` + `backdrop-blur(16px) saturate(180%)`，磨砂质感
+- **核心按钮**：MovingBorder 动态渐变边框动画（蓝→青色光带流动）
+- **Dashboard 背景**：Spotlight 组件产生大面积柔和光晕
+- **紧急热点卡片**：顶部渐变指示线 + 外发光阴影
+- **统计卡片**：紧急热点使用 BackgroundGradient 组件包裹（蓝/青/紫/绿四色辐射渐变流动）
+- **动画引擎**：framer-motion，所有展开/折叠/入场使用 AnimatePresence
+- **尊重 `prefers-reduced-motion`**：禁用所有动画的回退方案
+- **移动端**：底部 Tab 导航（热点雷达 / 监控词 / 设置），ActiveIndicator 使用 cyan-400
 
-### 9.2 徽章体系（Badge System）
+### 9.2 Aceternity UI 组件
 
-| 徽章               | 触发条件        | 颜色         |
-| ------------------ | --------------- | ------------ |
-| CRITICAL           | heat_score ≥ 9  | 红 `#f87171` |
-| HIGH               | heat_score ≥ 7  | 橙 `#fb923c` |
-| MED                | heat_score ≥ 5  | 黄 `#fbbf24` |
-| LOW                | heat_score < 5  | 灰 `#94a3b8` |
-| 标签 Tag           | tags 数组内容   | 蓝 `#93c5fd` |
-| 可信（关键词命中） | keyword_id 非空 | 绿 `#86efac` |
+| 组件               | 用途                            | 位置                   |
+| ------------------ | ------------------------------- | ---------------------- |
+| SparklesCore       | Logo 粒子发光效果               | Layout.tsx 顶部导航    |
+| Spotlight          | Dashboard 页面大面积柔光背景    | Dashboard.tsx          |
+| MovingBorder       | 立即扫描按钮流动渐变边框        | Layout.tsx             |
+| BackgroundGradient | 紧急热点统计卡片流动渐变背景    | Dashboard.tsx StatCard |
+| TextGenerateEffect | （预留）空状态/标题文字逐字生成 | 未来可用               |
 
-### 9.3 响应式断点
+### 9.3 徽章体系（Badge System）
+
+| 徽章               | 触发条件        | 颜色                  |
+| ------------------ | --------------- | --------------------- |
+| CRITICAL           | heat_score ≥ 9  | 红 `#f87171` + 外发光 |
+| HIGH               | heat_score ≥ 7  | 橙 `#fb923c`          |
+| MED                | heat_score ≥ 5  | 黄 `#fbbf24`          |
+| LOW                | heat_score < 5  | 灰 `#94a3b8`          |
+| 标签 Tag           | tags 数组内容   | 青 `#67e8f9`          |
+| 可信（关键词命中） | keyword_id 非空 | 绿 `#86efac`          |
+
+### 9.4 响应式断点
 
 | 断点            | 布局                                  |
 | --------------- | ------------------------------------- |
 | < 768px（手机） | 单列，顶部 + 底部双 Tab 导航          |
 | ≥ 768px（桌面） | 单列（max-width 约束），顶部 Tab 导航 |
 
-### 9.4 页面模块
+### 9.5 页面模块
 
 **Dashboard（热点雷达）**
 
@@ -413,19 +440,19 @@ async def send_email(subject: str, body_html: str):
 
 ## 11. 开发阶段规划
 
-### Phase 1：Web 版（本次完成）
+### Phase 1：Web 版（已完成 ✓）
 
-| 步骤   | 内容                                            |
-| ------ | ----------------------------------------------- |
-| Step 1 | 项目结构 + 依赖 + 环境配置                      |
-| Step 2 | 数据库模型 + SQLite 初始化                      |
-| Step 3 | RSS/HN/DDG 数据抓取服务                         |
-| Step 4 | OpenRouter AI 分析模块                          |
-| Step 5 | APScheduler 定时任务                            |
-| Step 6 | 邮件通知服务                                    |
-| Step 7 | FastAPI 完整路由                                |
-| Step 8 | React 前端 Dashboard（HotPulse 深色仪表盘风格） |
-| Step 9 | 前后端联调 + 测试                               |
+| 步骤   | 内容                                            | 状态 |
+| ------ | ----------------------------------------------- | ---- |
+| Step 1 | 项目结构 + 依赖 + 环境配置                      | ✓    |
+| Step 2 | 数据库模型 + SQLite 初始化                      | ✓    |
+| Step 3 | RSS/HN/DDG 数据抓取服务                         | ✓    |
+| Step 4 | OpenRouter AI 分析模块                          | ✓    |
+| Step 5 | APScheduler 定时任务                            | ✓    |
+| Step 6 | 邮件通知服务                                    | ✓    |
+| Step 7 | FastAPI 完整路由                                | ✓    |
+| Step 8 | React 前端 Dashboard（Aceternity UI 深色仪表盘）| ✓    |
+| Step 9 | 前后端联调 + 测试                               | ✓    |
 
 ### Phase 2：Agent Skills（后续迭代）
 

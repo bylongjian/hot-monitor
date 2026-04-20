@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import { settingsApi, type Settings } from "../api/client";
 import {
   Save,
@@ -69,9 +70,13 @@ export function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4">
+      <div className="max-w-xl space-y-3">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="glass-card h-24 animate-pulse" />
+          <div
+            key={i}
+            className="hp-card h-24 animate-pulse"
+            style={{ background: "rgba(255,255,255,0.02)" }}
+          />
         ))}
       </div>
     );
@@ -79,9 +84,9 @@ export function SettingsPage() {
 
   return (
     <div className="max-w-xl">
-      <div className="mb-5">
-        <h1 className="text-lg font-semibold text-white mb-0.5">系统设置</h1>
-        <p className="text-xs" style={{ color: "rgba(100,116,139,0.7)" }}>
+      <div className="mb-6">
+        <h1 className="text-lg font-semibold text-white mb-1">系统设置</h1>
+        <p className="text-xs text-slate-600">
           配置 AI 模型、通知方式和扫描参数
         </p>
       </div>
@@ -95,27 +100,23 @@ export function SettingsPage() {
               value={form.openrouter_api_key || ""}
               onChange={(e) => set("openrouter_api_key", e.target.value)}
               placeholder="sk-or-..."
-              className="hp-input pr-9"
+              className="hp-input pr-9 font-mono text-xs"
             />
             <button
               type="button"
               onClick={() => setShowKey(!showKey)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-              style={{ color: "rgba(100,116,139,0.6)" }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors"
             >
               {showKey ? <EyeOff size={13} /> : <Eye size={13} />}
             </button>
           </div>
-          <p
-            className="text-xs mt-1"
-            style={{ color: "rgba(100,116,139,0.5)" }}
-          >
+          <p className="text-xs mt-1.5 text-slate-600">
             从{" "}
             <a
               href="https://openrouter.ai/keys"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300"
+              className="text-blue-400 hover:text-blue-300 transition-colors"
             >
               openrouter.ai/keys
             </a>{" "}
@@ -128,13 +129,13 @@ export function SettingsPage() {
             value={form.ai_model || "deepseek/deepseek-v3.2"}
             onChange={(e) => set("ai_model", e.target.value)}
             className="hp-input"
-            style={{ background: "rgba(255,255,255,0.04)" }}
+            style={{ background: "rgba(255,255,255,0.03)" }}
           >
             {AI_MODELS.map((m) => (
               <option
                 key={m.value}
                 value={m.value}
-                style={{ background: "#0f1525" }}
+                style={{ background: "#070b14" }}
               >
                 {m.label}
               </option>
@@ -153,12 +154,9 @@ export function SettingsPage() {
             step={10}
             value={form.scan_interval ?? 60}
             onChange={(e) => set("scan_interval", Number(e.target.value))}
-            className="w-full h-1.5 accent-blue-400"
+            className="w-full h-1.5 accent-blue-500 rounded-full"
           />
-          <div
-            className="flex justify-between text-xs mt-1"
-            style={{ color: "rgba(100,116,139,0.5)" }}
-          >
+          <div className="flex justify-between text-xs mt-1 text-slate-600">
             <span>10m</span>
             <span>1h</span>
             <span>2h</span>
@@ -175,12 +173,9 @@ export function SettingsPage() {
             onChange={(e) =>
               set("notify_heat_threshold", Number(e.target.value))
             }
-            className="w-full h-1.5 accent-orange-400"
+            className="w-full h-1.5 accent-orange-500 rounded-full"
           />
-          <div
-            className="flex justify-between text-xs mt-1"
-            style={{ color: "rgba(100,116,139,0.5)" }}
-          >
+          <div className="flex justify-between text-xs mt-1 text-slate-600">
             <span>1</span>
             <span>5</span>
             <span>10</span>
@@ -200,21 +195,11 @@ export function SettingsPage() {
                   set("smtp_host", p.host);
                   set("smtp_port", p.port);
                 }}
-                className="px-3 py-1 rounded-lg text-xs border transition-all"
-                style={{
-                  background:
-                    form.smtp_host === p.host
-                      ? "rgba(59,130,246,0.12)"
-                      : "rgba(255,255,255,0.04)",
-                  borderColor:
-                    form.smtp_host === p.host
-                      ? "rgba(59,130,246,0.3)"
-                      : "rgba(255,255,255,0.09)",
-                  color:
-                    form.smtp_host === p.host
-                      ? "#93c5fd"
-                      : "rgba(148,163,184,0.6)",
-                }}
+                className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${
+                  form.smtp_host === p.host
+                    ? "bg-blue-500/10 border-blue-500/25 text-blue-300"
+                    : "bg-white/[0.02] border-white/[0.07] text-slate-500 hover:text-slate-400 hover:bg-white/[0.04]"
+                }`}
               >
                 {p.name}
               </button>
@@ -268,8 +253,7 @@ export function SettingsPage() {
             <button
               type="button"
               onClick={() => setShowPwd(!showPwd)}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-              style={{ color: "rgba(100,116,139,0.6)" }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors"
             >
               {showPwd ? <EyeOff size={13} /> : <Eye size={13} />}
             </button>
@@ -307,29 +291,36 @@ export function SettingsPage() {
       </button>
 
       {/* Toast */}
-      {toast && (
-        <div
-          className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm shadow-xl animate-slide-in z-50"
-          style={{
-            background:
-              toast.type === "success"
-                ? "rgba(20,83,45,0.95)"
-                : "rgba(127,29,29,0.95)",
-            borderColor:
-              toast.type === "success"
-                ? "rgba(34,197,94,0.3)"
-                : "rgba(239,68,68,0.3)",
-            color: toast.type === "success" ? "#86efac" : "#fca5a5",
-          }}
-        >
-          {toast.type === "success" ? (
-            <CheckCircle size={13} />
-          ) : (
-            <AlertCircle size={13} />
-          )}
-          {toast.msg}
-        </div>
-      )}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm shadow-xl z-50"
+            style={{
+              background:
+                toast.type === "success"
+                  ? "rgba(20,83,45,0.92)"
+                  : "rgba(127,29,29,0.92)",
+              borderColor:
+                toast.type === "success"
+                  ? "rgba(34,197,94,0.25)"
+                  : "rgba(239,68,68,0.25)",
+              color: toast.type === "success" ? "#86efac" : "#fca5a5",
+              backdropFilter: "blur(12px)",
+            }}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle size={13} />
+            ) : (
+              <AlertCircle size={13} />
+            )}
+            {toast.msg}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -348,11 +339,8 @@ function Section({
   return (
     <div className="hp-card p-4 mb-3">
       <h2
-        className="flex items-center gap-2 text-xs font-medium mb-4 pb-2"
-        style={{
-          color: "rgba(148,163,184,0.6)",
-          borderBottom: "1px solid rgba(255,255,255,0.07)",
-        }}
+        className="flex items-center gap-2 text-xs font-medium mb-4 pb-2 text-slate-500"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
       >
         {icon}
         {title}
@@ -371,12 +359,7 @@ function Field({
 }) {
   return (
     <div>
-      <label
-        className="block text-xs mb-1.5"
-        style={{ color: "rgba(100,116,139,0.7)" }}
-      >
-        {label}
-      </label>
+      <label className="block text-xs mb-1.5 text-slate-500">{label}</label>
       {children}
     </div>
   );

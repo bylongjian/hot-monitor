@@ -10,7 +10,7 @@
 
 body {
   margin: 0;
-  background: #0b0f1a;
+  background: #030712;
   color: #e2e8f0;
   font-family: "Inter", system-ui, sans-serif;
   min-height: 100vh;
@@ -18,29 +18,32 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* --- Card ---*/
 .hp-card {
-  background: rgba(255, 255, 255, 0.028);
-  border: 1px solid rgba(255, 255, 255, 0.072);
-  border-radius: 12px;
-  transition: border-color 0.15s;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 .hp-card:hover {
-  border-color: rgba(255, 255, 255, 0.13);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.04);
 }
 
 /* --- Badges --- */
@@ -56,55 +59,56 @@ body {
 }
 .badge-high {
   color: #fb923c;
-  background: rgba(251, 146, 60, 0.12);
-  border-color: rgba(251, 146, 60, 0.25);
+  background: rgba(251, 146, 60, 0.1);
+  border-color: rgba(251, 146, 60, 0.2);
 }
 .badge-critical {
   color: #f87171;
-  background: rgba(248, 113, 113, 0.12);
-  border-color: rgba(248, 113, 113, 0.25);
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.2);
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.1);
 }
 .badge-med {
   color: #fbbf24;
-  background: rgba(251, 191, 36, 0.12);
-  border-color: rgba(251, 191, 36, 0.25);
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.2);
 }
 .badge-low {
   color: #94a3b8;
-  background: rgba(148, 163, 184, 0.08);
-  border-color: rgba(148, 163, 184, 0.15);
+  background: rgba(148, 163, 184, 0.06);
+  border-color: rgba(148, 163, 184, 0.12);
 }
 .badge-tag {
-  color: #93c5fd;
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.2);
+  color: #67e8f9;
+  background: rgba(6, 182, 212, 0.08);
+  border-color: rgba(6, 182, 212, 0.18);
 }
 .badge-trust {
   color: #86efac;
-  background: rgba(34, 197, 94, 0.1);
-  border-color: rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.18);
 }
 
 /* --- Input --- */
 .hp-input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 9px 14px;
   font-size: 13px;
   color: #e2e8f0;
   outline: none;
   transition:
-    border-color 0.15s,
-    background 0.15s;
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 .hp-input::placeholder {
-  color: rgba(148, 163, 184, 0.45);
+  color: rgba(148, 163, 184, 0.35);
 }
 .hp-input:focus {
-  border-color: rgba(59, 130, 246, 0.5);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(59, 130, 246, 0.45);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
 }
 
 /* --- Btn --- */
@@ -113,21 +117,21 @@ body {
   align-items: center;
   gap: 6px;
   padding: 7px 14px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 13px;
   font-weight: 500;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s;
 }
 .hp-btn-primary {
   background: linear-gradient(135deg, #3b82f6, #06b6d4);
   color: white;
-  box-shadow: 0 0 16px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.25);
 }
 .hp-btn-primary:hover {
-  box-shadow: 0 0 22px rgba(59, 130, 246, 0.45);
-  filter: brightness(1.08);
+  box-shadow: 0 0 28px rgba(59, 130, 246, 0.4);
+  filter: brightness(1.1);
 }
 .hp-btn-primary:disabled {
   opacity: 0.5;
@@ -135,12 +139,12 @@ body {
   box-shadow: none;
 }
 .hp-btn-ghost {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   color: #94a3b8;
-  border-color: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 .hp-btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.08);
   color: #e2e8f0;
 }
 .hp-btn-ghost:disabled {
@@ -148,35 +152,55 @@ body {
   cursor: not-allowed;
 }
 .hp-btn-danger {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.08);
   color: #f87171;
-  border-color: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.18);
 }
 .hp-btn-danger:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.15);
 }
 
 /* --- Section --- */
 .hp-section-title {
   font-size: 13px;
   font-weight: 600;
-  color: rgba(148, 163, 184, 0.8);
+  color: rgba(148, 163, 184, 0.7);
   display: flex;
   align-items: center;
   gap: 6px;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   margin-bottom: 14px;
 }
 
 /* Legacy compat */
 .glass-card {
-  background: rgba(255, 255, 255, 0.028);
-  border: 1px solid rgba(255, 255, 255, 0.072);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
 }
 .font-mono {
   font-family: "JetBrains Mono", monospace;
+}
+
+/* --- Grid Background --- */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* --- Glow Effects --- */
+.glow-blue {
+  box-shadow:
+    0 0 40px rgba(59, 130, 246, 0.08),
+    0 0 80px rgba(59, 130, 246, 0.04);
+}
+.glow-cyan {
+  box-shadow:
+    0 0 40px rgba(6, 182, 212, 0.08),
+    0 0 80px rgba(6, 182, 212, 0.04);
 }
 
 @keyframes slideIn {
@@ -204,4 +228,15 @@ body {
 }
 .animate-blink {
   animation: blink 1s step-end infinite;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
