@@ -21,6 +21,11 @@ import {
   RotateCcw,
   Search,
   BellOff,
+  Radar,
+  Sparkles,
+  Gauge,
+  Filter,
+  Orbit,
 } from "lucide-react";
 
 type SortKey = "newest" | "heat" | "matched" | "unnotified";
@@ -115,6 +120,7 @@ interface StatCardProps {
   label: string;
   value: number;
   valueColor: string;
+  note: string;
   accent?: boolean;
 }
 
@@ -124,27 +130,31 @@ function StatCard({
   label,
   value,
   valueColor,
+  note,
   accent,
 }: StatCardProps) {
   const inner = (
     <div
-      className="rounded-xl p-4 h-full"
+      className="h-full rounded-[18px] p-4"
       style={{
         background:
-          accent && value > 0 ? "rgba(239,68,68,0.05)" : "rgba(3,7,18,0.8)",
+          accent && value > 0
+            ? "linear-gradient(180deg, rgba(127,29,29,0.18), rgba(17,24,39,0.78))"
+            : "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(8,15,27,0.92))",
       }}
     >
-      <div className="flex items-center gap-2 mb-3 text-slate-500 text-xs">
-        <span className="w-6 h-6 rounded-lg flex items-center justify-center bg-white/[0.04]">
+      <div className="mb-4 flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-slate-500">
+        <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/[0.04]">
           <Icon size={13} className={iconColor} />
         </span>
         {label}
       </div>
       <div
-        className={`text-3xl font-bold tracking-tight font-mono ${valueColor}`}
+        className={`font-mono text-3xl font-bold tracking-tight ${valueColor}`}
       >
         {value}
       </div>
+      <div className="mt-2 text-xs text-slate-500">{note}</div>
     </div>
   );
 
@@ -295,8 +305,14 @@ export function Dashboard() {
   const visibleTagOptions = showAllTags ? tagOptions : tagOptions.slice(0, 6);
 
   useEffect(() => {
-    setVisibleCount(30);
-    setExpandedTopicIds([]);
+    const timer = window.setTimeout(() => {
+      setVisibleCount(30);
+      setExpandedTopicIds([]);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [listParams]);
 
   const filterCount = [
@@ -348,17 +364,89 @@ export function Dashboard() {
 
   return (
     <div className="relative">
-      {/* Spotlight background effect */}
-      <Spotlight className="hidden md:block -top-40" />
+      <Spotlight
+        className="pointer-events-none hidden md:block -top-44 opacity-80"
+        gradientFirst="radial-gradient(68.54% 68.72% at 55.02% 31.46%, hsla(189, 96%, 72%, .10) 0, hsla(189, 96%, 50%, .04) 48%, hsla(189, 96%, 45%, 0) 80%)"
+        gradientSecond="radial-gradient(50% 50% at 50% 50%, hsla(35, 100%, 72%, .08) 0, hsla(35, 100%, 55%, .03) 70%, transparent 100%)"
+        gradientThird="radial-gradient(50% 50% at 50% 50%, hsla(210, 100%, 85%, .05) 0, hsla(210, 100%, 45%, .02) 78%, transparent 100%)"
+        duration={9}
+        xOffset={44}
+        translateY={-310}
+      />
 
-      {/* ── Stats Row ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 relative z-10">
+      <section className="hp-card relative z-10 mb-6 overflow-hidden p-5 md:p-6">
+        <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,rgba(103,232,249,0.12),transparent_48%)]" />
+        <div className="relative grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(240px,0.9fr)] lg:items-end">
+          <div>
+            <div className="hp-kicker mb-3">Live publishing radar</div>
+            <h1 className="max-w-3xl text-2xl font-semibold tracking-tight text-white md:text-[32px] md:leading-[1.15]">
+              今天最值得抢先判断与发布的 AI 热点
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400 md:text-[15px]">
+              这里不是泛列表，而是给内容创作者的快反工作台。你可以直接在卡片里完成价值判断，减少无效跳转，把注意力留给真正值得抢发的话题。
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-slate-300">
+                <Gauge size={13} className="text-cyan-300" />
+                总热点 {status?.total_topics ?? allTopics.length}
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-slate-300">
+                <Sparkles size={13} className="text-orange-300" />
+                今日新增 {todayCount}
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-slate-300">
+                <Orbit size={13} className="text-emerald-300" />
+                {status?.scan_running ? "扫描执行中" : "扫描结束后自动刷新"}
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-[20px] border border-white/[0.08] bg-[#091322]/84 p-4">
+            <div className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-slate-500">
+              <Radar size={12} className="text-cyan-300" />
+              当前视图策略
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                  排序
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-100">
+                  {sortTabs.find((tab) => tab.key === filters.sort)?.label}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                  筛选强度
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-100">
+                  {filterCount > 0
+                    ? `${filterCount} 个条件激活`
+                    : "未施加额外限制"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                  热点流
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-100">
+                  当前展示 {visibleTopics.length} / {topics.length}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="relative z-10 mb-8 grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard
           icon={Activity}
           iconColor="text-blue-400"
           label="总热点"
           value={status?.total_topics ?? allTopics.length}
           valueColor="text-blue-300"
+          note="当前数据库热点规模"
         />
         <StatCard
           icon={Clock}
@@ -366,6 +454,7 @@ export function Dashboard() {
           label="今日新增"
           value={todayCount}
           valueColor="text-cyan-300"
+          note="按发现时间统计"
         />
         <StatCard
           icon={AlertTriangle}
@@ -373,6 +462,7 @@ export function Dashboard() {
           label="紧急热点"
           value={urgentCount}
           valueColor="text-red-400"
+          note="热度 9 分及以上"
           accent
         />
         <StatCard
@@ -381,300 +471,307 @@ export function Dashboard() {
           label="监控词"
           value={activeKeywords}
           valueColor="text-emerald-400"
+          note="当前启用的监控范围"
         />
       </div>
 
-      {/* ── Section Header ── */}
-      <div className="flex items-center justify-between mb-4 relative z-10">
-        <h2 className="flex items-center gap-2 font-semibold text-white text-[15px]">
-          <Flame size={15} className="text-orange-400" />
-          实时热点流
-        </h2>
+      <div className="relative z-10 mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <div className="hp-kicker mb-2">Realtime intelligence flow</div>
+          <h2 className="flex items-center gap-2 text-[18px] font-semibold text-white">
+            <Flame size={16} className="text-orange-400" />
+            热点流
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            先判断价值，再决定是否跳转原站点。展开区保留完整线索与原始描述。
+          </p>
+        </div>
         <div className="flex items-center gap-3">
           <button
             onClick={toggleAllExpanded}
-            className="text-xs rounded-lg border border-white/[0.06] px-3 py-1.5 text-slate-400 transition-colors hover:text-slate-200"
+            className="rounded-full border border-white/[0.08] px-3 py-1.5 text-xs text-slate-300 transition-colors hover:text-white"
           >
             {allVisibleExpanded ? "收起全部详情" : "展开全部详情"}
           </button>
-          <span className="text-xs text-slate-600">扫描完成后自动刷新</span>
+          <span className="text-xs text-slate-500">扫描完成后自动刷新</span>
         </div>
       </div>
 
-      {/* ── Sort + Filter Bar ── */}
-      <div
-        className="flex items-center gap-1 mb-4 overflow-x-auto pb-1 rounded-xl px-3 py-2 relative z-10"
-        style={{
-          background: "rgba(255,255,255,0.02)",
-          border: "1px solid rgba(255,255,255,0.05)",
-        }}
-      >
-        {/* Sort tabs */}
-        {sortTabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() =>
-              setFilters((current) => ({ ...current, sort: tab.key }))
-            }
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
-            style={{
-              background:
-                filters.sort === tab.key
-                  ? "rgba(255,255,255,0.1)"
-                  : "transparent",
-              color:
-                filters.sort === tab.key ? "#e2e8f0" : "rgba(100,116,139,0.8)",
-            }}
-          >
-            {tab.icon && <tab.icon size={12} />}
-            {tab.label}
-          </button>
-        ))}
+      <section className="hp-card relative z-10 mb-5 p-4 md:p-5">
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-slate-500">
+              <Filter size={12} className="text-cyan-300" />
+              视图控制台
+            </div>
+            <p className="text-sm text-slate-400">
+              来源与标签基于最近 100
+              条热点聚合，用于快速收窄视野，不代表全库精确统计。
+            </p>
+          </div>
 
-        <div
-          className="w-px h-4 mx-1"
-          style={{ background: "rgba(255,255,255,0.08)" }}
-        />
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-slate-300">
+              <SlidersHorizontal size={12} />
+              筛选{filterCount > 0 ? ` ${filterCount}` : " 0"}
+            </span>
+            {filterCount > 0 && (
+              <button
+                onClick={resetFilters}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-slate-300 transition-colors hover:text-white"
+              >
+                <RotateCcw size={11} />
+                重置
+              </button>
+            )}
+          </div>
+        </div>
 
-        {/* Filter chips */}
-        <div className="flex items-center gap-1 flex-1">
-          {heatFilters.map((f) => (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {sortTabs.map((tab) => (
             <button
-              key={String(f.value)}
+              key={tab.key}
               onClick={() =>
-                setFilters((current) => ({ ...current, minHeat: f.value }))
+                setFilters((current) => ({ ...current, sort: tab.key }))
               }
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-all whitespace-nowrap"
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all"
               style={{
                 background:
-                  filters.minHeat === f.value
-                    ? "rgba(251,146,60,0.12)"
-                    : "transparent",
+                  filters.sort === tab.key
+                    ? "rgba(255,255,255,0.08)"
+                    : "rgba(255,255,255,0.02)",
                 color:
-                  filters.minHeat === f.value
-                    ? "#fb923c"
-                    : "rgba(100,116,139,0.8)",
+                  filters.sort === tab.key
+                    ? "#e5edf7"
+                    : "rgba(148,163,184,0.82)",
                 border:
-                  filters.minHeat === f.value
-                    ? "1px solid rgba(251,146,60,0.25)"
-                    : "1px solid transparent",
+                  filters.sort === tab.key
+                    ? "1px solid rgba(148,163,184,0.16)"
+                    : "1px solid rgba(255,255,255,0.04)",
               }}
             >
-              {f.dot && (
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: f.dot }}
-                />
-              )}
-              {f.label}
+              {tab.icon && <tab.icon size={12} />}
+              {tab.label}
             </button>
           ))}
         </div>
 
-        {/* Filter count + Reset */}
-        <div className="flex items-center gap-1 ml-auto">
-          <button
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all"
-            style={{
-              background:
-                filterCount > 0
-                  ? "rgba(59,130,246,0.12)"
-                  : "rgba(255,255,255,0.04)",
-              color: filterCount > 0 ? "#93c5fd" : "rgba(100,116,139,0.7)",
-              border:
-                filterCount > 0
-                  ? "1px solid rgba(59,130,246,0.2)"
-                  : "1px solid rgba(255,255,255,0.06)",
-            }}
-          >
-            <SlidersHorizontal size={12} />
-            筛选{filterCount > 0 && ` ${filterCount}`}
-          </button>
-          {filterCount > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {heatFilters.map((filter) => (
             <button
-              onClick={resetFilters}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs transition-all"
-              style={{ color: "rgba(100,116,139,0.7)" }}
+              key={String(filter.value)}
+              onClick={() =>
+                setFilters((current) => ({ ...current, minHeat: filter.value }))
+              }
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+              style={{
+                background:
+                  filters.minHeat === filter.value
+                    ? "rgba(251,191,36,0.12)"
+                    : "rgba(255,255,255,0.02)",
+                color:
+                  filters.minHeat === filter.value
+                    ? "#fcd34d"
+                    : "rgba(148,163,184,0.82)",
+                border:
+                  filters.minHeat === filter.value
+                    ? "1px solid rgba(251,191,36,0.2)"
+                    : "1px solid rgba(255,255,255,0.04)",
+              }}
             >
-              <RotateCcw size={11} />
-              重置
+              {filter.dot && (
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ background: filter.dot }}
+                />
+              )}
+              {filter.label}
             </button>
+          ))}
+        </div>
+
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_220px_180px] gap-3">
+            <label className="relative block">
+              <Search
+                size={14}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600"
+              />
+              <input
+                value={filters.q}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    q: event.target.value,
+                  }))
+                }
+                placeholder="搜索标题或 AI 摘要..."
+                aria-label="搜索热点"
+                className="hp-input pl-9"
+              />
+            </label>
+
+            <select
+              value={filters.keywordMode}
+              onChange={(event) =>
+                setFilters((current) => ({
+                  ...current,
+                  keywordMode: event.target.value as KeywordMode,
+                }))
+              }
+              aria-label="关键词命中筛选"
+              className="hp-input"
+            >
+              {keywordFilters.map((item) => (
+                <option key={item.key} value={item.key}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={filters.timeRange}
+              onChange={(event) =>
+                setFilters((current) => ({
+                  ...current,
+                  timeRange: event.target.value as TimeRange,
+                }))
+              }
+              aria-label="时间范围筛选"
+              className="hp-input"
+            >
+              {timeFilters.map((item) => (
+                <option key={item.key} value={item.key}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {sourceOptions.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                来源
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {visibleSourceOptions.map((sourceName) => {
+                  const active = filters.sourceNames.includes(sourceName);
+                  return (
+                    <button
+                      key={sourceName}
+                      onClick={() => toggleSource(sourceName)}
+                      className="px-2.5 py-1 rounded-md text-xs transition-all border"
+                      style={{
+                        background: active
+                          ? "rgba(34,211,238,0.12)"
+                          : "rgba(255,255,255,0.02)",
+                        borderColor: active
+                          ? "rgba(34,211,238,0.28)"
+                          : "rgba(255,255,255,0.06)",
+                        color: active ? "#67e8f9" : "rgba(148,163,184,0.78)",
+                      }}
+                    >
+                      {sourceName}
+                    </button>
+                  );
+                })}
+              </div>
+              {sourceOptions.length > visibleSourceOptions.length && (
+                <button
+                  onClick={() => setShowAllSources(true)}
+                  className="text-xs transition-colors"
+                  style={{ color: "rgba(103,232,249,0.88)" }}
+                >
+                  更多来源 +{sourceOptions.length - visibleSourceOptions.length}
+                </button>
+              )}
+              {showAllSources && sourceOptions.length > 8 && (
+                <button
+                  onClick={() => setShowAllSources(false)}
+                  className="text-xs transition-colors"
+                  style={{ color: "rgba(148,163,184,0.85)" }}
+                >
+                  收起来源
+                </button>
+              )}
+            </div>
+          )}
+
+          {tagOptions.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                标签
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() =>
+                    setFilters((current) => ({ ...current, tag: "" }))
+                  }
+                  className="px-2.5 py-1 rounded-md text-xs transition-all border"
+                  style={{
+                    background:
+                      filters.tag === ""
+                        ? "rgba(59,130,246,0.12)"
+                        : "rgba(255,255,255,0.02)",
+                    borderColor:
+                      filters.tag === ""
+                        ? "rgba(59,130,246,0.28)"
+                        : "rgba(255,255,255,0.06)",
+                    color:
+                      filters.tag === "" ? "#93c5fd" : "rgba(148,163,184,0.78)",
+                  }}
+                >
+                  全部标签
+                </button>
+                {visibleTagOptions.map((tagName) => {
+                  const active = filters.tag === tagName;
+                  return (
+                    <button
+                      key={tagName}
+                      onClick={() =>
+                        setFilters((current) => ({
+                          ...current,
+                          tag: current.tag === tagName ? "" : tagName,
+                        }))
+                      }
+                      className="px-2.5 py-1 rounded-md text-xs transition-all border"
+                      style={{
+                        background: active
+                          ? "rgba(16,185,129,0.12)"
+                          : "rgba(255,255,255,0.02)",
+                        borderColor: active
+                          ? "rgba(16,185,129,0.28)"
+                          : "rgba(255,255,255,0.06)",
+                        color: active ? "#6ee7b7" : "rgba(148,163,184,0.78)",
+                      }}
+                    >
+                      {tagName}
+                    </button>
+                  );
+                })}
+              </div>
+              {tagOptions.length > visibleTagOptions.length && (
+                <button
+                  onClick={() => setShowAllTags(true)}
+                  className="text-xs transition-colors"
+                  style={{ color: "rgba(110,231,183,0.9)" }}
+                >
+                  更多标签 +{tagOptions.length - visibleTagOptions.length}
+                </button>
+              )}
+              {showAllTags && tagOptions.length > 6 && (
+                <button
+                  onClick={() => setShowAllTags(false)}
+                  className="text-xs transition-colors"
+                  style={{ color: "rgba(148,163,184,0.85)" }}
+                >
+                  收起标签
+                </button>
+              )}
+            </div>
           )}
         </div>
-      </div>
-
-      <div className="space-y-3 mb-5 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_220px_180px] gap-3">
-          <label className="relative block">
-            <Search
-              size={14}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600"
-            />
-            <input
-              value={filters.q}
-              onChange={(event) =>
-                setFilters((current) => ({ ...current, q: event.target.value }))
-              }
-              placeholder="搜索标题或 AI 摘要..."
-              aria-label="搜索热点"
-              className="hp-input pl-9"
-            />
-          </label>
-
-          <select
-            value={filters.keywordMode}
-            onChange={(event) =>
-              setFilters((current) => ({
-                ...current,
-                keywordMode: event.target.value as KeywordMode,
-              }))
-            }
-            aria-label="关键词命中筛选"
-            className="hp-input"
-          >
-            {keywordFilters.map((item) => (
-              <option key={item.key} value={item.key}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={filters.timeRange}
-            onChange={(event) =>
-              setFilters((current) => ({
-                ...current,
-                timeRange: event.target.value as TimeRange,
-              }))
-            }
-            aria-label="时间范围筛选"
-            className="hp-input"
-          >
-            {timeFilters.map((item) => (
-              <option key={item.key} value={item.key}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {sourceOptions.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-2">
-              {visibleSourceOptions.map((sourceName) => {
-                const active = filters.sourceNames.includes(sourceName);
-                return (
-                  <button
-                    key={sourceName}
-                    onClick={() => toggleSource(sourceName)}
-                    className="px-2.5 py-1 rounded-md text-xs transition-all border"
-                    style={{
-                      background: active
-                        ? "rgba(34,211,238,0.12)"
-                        : "rgba(255,255,255,0.02)",
-                      borderColor: active
-                        ? "rgba(34,211,238,0.28)"
-                        : "rgba(255,255,255,0.06)",
-                      color: active ? "#67e8f9" : "rgba(148,163,184,0.78)",
-                    }}
-                  >
-                    {sourceName}
-                  </button>
-                );
-              })}
-            </div>
-            {sourceOptions.length > visibleSourceOptions.length && (
-              <button
-                onClick={() => setShowAllSources(true)}
-                className="text-xs transition-colors"
-                style={{ color: "rgba(103,232,249,0.88)" }}
-              >
-                更多来源 +{sourceOptions.length - visibleSourceOptions.length}
-              </button>
-            )}
-            {showAllSources && sourceOptions.length > 8 && (
-              <button
-                onClick={() => setShowAllSources(false)}
-                className="text-xs transition-colors"
-                style={{ color: "rgba(148,163,184,0.85)" }}
-              >
-                收起来源
-              </button>
-            )}
-          </div>
-        )}
-
-        {tagOptions.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() =>
-                  setFilters((current) => ({ ...current, tag: "" }))
-                }
-                className="px-2.5 py-1 rounded-md text-xs transition-all border"
-                style={{
-                  background:
-                    filters.tag === ""
-                      ? "rgba(59,130,246,0.12)"
-                      : "rgba(255,255,255,0.02)",
-                  borderColor:
-                    filters.tag === ""
-                      ? "rgba(59,130,246,0.28)"
-                      : "rgba(255,255,255,0.06)",
-                  color:
-                    filters.tag === "" ? "#93c5fd" : "rgba(148,163,184,0.78)",
-                }}
-              >
-                全部标签
-              </button>
-              {visibleTagOptions.map((tagName) => {
-                const active = filters.tag === tagName;
-                return (
-                  <button
-                    key={tagName}
-                    onClick={() =>
-                      setFilters((current) => ({
-                        ...current,
-                        tag: current.tag === tagName ? "" : tagName,
-                      }))
-                    }
-                    className="px-2.5 py-1 rounded-md text-xs transition-all border"
-                    style={{
-                      background: active
-                        ? "rgba(16,185,129,0.12)"
-                        : "rgba(255,255,255,0.02)",
-                      borderColor: active
-                        ? "rgba(16,185,129,0.28)"
-                        : "rgba(255,255,255,0.06)",
-                      color: active ? "#6ee7b7" : "rgba(148,163,184,0.78)",
-                    }}
-                  >
-                    {tagName}
-                  </button>
-                );
-              })}
-            </div>
-            {tagOptions.length > visibleTagOptions.length && (
-              <button
-                onClick={() => setShowAllTags(true)}
-                className="text-xs transition-colors"
-                style={{ color: "rgba(110,231,183,0.9)" }}
-              >
-                更多标签 +{tagOptions.length - visibleTagOptions.length}
-              </button>
-            )}
-            {showAllTags && tagOptions.length > 6 && (
-              <button
-                onClick={() => setShowAllTags(false)}
-                className="text-xs transition-colors"
-                style={{ color: "rgba(148,163,184,0.85)" }}
-              >
-                收起标签
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+      </section>
 
       {/* ── Topic List ── */}
       {isLoading ? (

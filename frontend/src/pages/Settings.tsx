@@ -11,6 +11,9 @@ import {
   EyeOff,
   CheckCircle,
   AlertCircle,
+  Gauge,
+  Radar,
+  ShieldCheck,
 } from "lucide-react";
 
 const AI_MODELS = [
@@ -45,7 +48,9 @@ export function SettingsPage() {
   });
 
   useEffect(() => {
-    if (data) setForm(data);
+    if (!data) return;
+    const timer = window.setTimeout(() => setForm(data), 0);
+    return () => window.clearTimeout(timer);
   }, [data]);
 
   const saveMutation = useMutation({
@@ -65,7 +70,7 @@ export function SettingsPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const set = (field: string, value: any) =>
+  const set = (field: string, value: string | number) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
   if (isLoading) {
@@ -99,12 +104,46 @@ export function SettingsPage() {
 
   return (
     <div className="max-w-xl">
-      <div className="mb-6">
-        <h1 className="text-lg font-semibold text-white mb-1">系统设置</h1>
-        <p className="text-xs text-slate-600">
-          配置 AI 模型、通知方式和扫描参数
-        </p>
-      </div>
+      <section className="hp-card mb-6 overflow-hidden p-5 md:p-6">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(220px,0.9fr)] lg:items-start">
+          <div>
+            <div className="hp-kicker mb-3">System control room</div>
+            <h1 className="text-2xl font-semibold tracking-tight text-white md:text-[30px]">
+              系统设置
+            </h1>
+            <p className="mt-3 text-sm leading-7 text-slate-400">
+              管理 AI
+              分析、扫描频率与通知通道。这里保留最少但关键的配置项，避免你在紧急发现热点时被设置本身拖慢。
+            </p>
+          </div>
+
+          <div className="rounded-[20px] border border-white/[0.08] bg-[#091322]/84 p-4">
+            <div className="space-y-3 text-sm text-slate-300">
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2 text-slate-500">
+                  <Radar size={13} />
+                  扫描间隔
+                </span>
+                <span>{form.scan_interval ?? 60} 分钟</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2 text-slate-500">
+                  <Gauge size={13} />
+                  通知阈值
+                </span>
+                <span>≥ {form.notify_heat_threshold ?? 8}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2 text-slate-500">
+                  <ShieldCheck size={13} />
+                  入库阈值
+                </span>
+                <span>≥ {form.min_heat_score ?? 7}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* AI Config */}
       <Section title="AI 配置" icon={<Bot size={13} />}>
