@@ -270,7 +270,7 @@ export function SettingsPage() {
             type="email"
             value={form.smtp_user || ""}
             onChange={(e) => set("smtp_user", e.target.value)}
-            placeholder="your@gmail.com"
+            placeholder="your@example.com"
             className="hp-input"
           />
         </Field>
@@ -299,7 +299,7 @@ export function SettingsPage() {
             type="email"
             value={form.notify_email || ""}
             onChange={(e) => set("notify_email", e.target.value)}
-            placeholder="notify@gmail.com"
+            placeholder="notify@example.com"
             className="hp-input"
           />
         </Field>

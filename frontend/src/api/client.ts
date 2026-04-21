@@ -55,10 +55,31 @@ export interface StatusOut {
   last_scan_error: string | null;
 }
 
+export interface TopicsListParams {
+  limit?: number;
+  offset?: number;
+  min_heat?: number;
+  sort?: "newest" | "heat" | "matched" | "unnotified";
+  source_names?: string[];
+  keyword_mode?: "all" | "matched" | "unmatched";
+  time_range?: "all" | "6h" | "24h" | "48h" | "7d";
+  tag?: string;
+  q?: string;
+}
+
+export interface KeywordsListParams {
+  enabled?: "all" | "enabled" | "disabled";
+  type?: "all" | "keyword" | "account";
+  platform?: string;
+  search?: string;
+  sort?: "created_desc" | "created_asc";
+}
+
 // ─── Keywords API ─────────────────────────────────────────────────────────────
 
 export const keywordsApi = {
-  list: () => api.get<Keyword[]>("/keywords").then((r) => r.data),
+  list: (params?: KeywordsListParams) =>
+    api.get<Keyword[]>("/keywords", { params }).then((r) => r.data),
   create: (data: {
     keyword: string;
     enabled?: boolean;
@@ -84,8 +105,17 @@ export const keywordsApi = {
 // ─── Topics API ───────────────────────────────────────────────────────────────
 
 export const topicsApi = {
-  list: (params?: { limit?: number; offset?: number; min_heat?: number }) =>
-    api.get<Topic[]>("/topics", { params }).then((r) => r.data),
+  list: (params?: TopicsListParams) => {
+    const normalizedParams = {
+      ...params,
+      source_names: params?.source_names?.length
+        ? params.source_names.join(",")
+        : undefined,
+    };
+    return api
+      .get<Topic[]>("/topics", { params: normalizedParams })
+      .then((r) => r.data);
+  },
   get: (id: number) => api.get<Topic>(`/topics/${id}`).then((r) => r.data),
   scan: () =>
     api

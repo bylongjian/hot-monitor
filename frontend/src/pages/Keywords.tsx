@@ -1,6 +1,11 @@
-import { useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { keywordsApi, type Keyword } from "../api/client";
+import { useSearchParams } from "react-router-dom";
+import {
+  keywordsApi,
+  type Keyword,
+  type KeywordsListParams,
+} from "../api/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -29,18 +34,105 @@ const PLATFORMS = [
   { value: "github", label: "GitHub", placeholder: "用户名或组织名" },
 ];
 
+const DEFAULT_KEYWORD_LIST_FILTERS: KeywordsListParams = {
+  enabled: "all",
+  type: "all",
+  platform: "",
+  search: "",
+  sort: "created_desc",
+};
+
+function parseKeywordListFilters(
+  searchParams: URLSearchParams,
+): KeywordsListParams {
+  const enabled = searchParams.get("enabled");
+  const type = searchParams.get("type");
+  const sort = searchParams.get("sort");
+
+  return {
+    enabled: enabled === "enabled" || enabled === "disabled" ? enabled : "all",
+    type: type === "keyword" || type === "account" ? type : "all",
+    platform: searchParams.get("platform") || "",
+    search: searchParams.get("search") || "",
+    sort: sort === "created_asc" ? "created_asc" : "created_desc",
+  };
+}
+
+function buildKeywordListSearchParams(
+  filters: KeywordsListParams,
+): URLSearchParams {
+  const params = new URLSearchParams();
+  if (
+    filters.enabled &&
+    filters.enabled !== DEFAULT_KEYWORD_LIST_FILTERS.enabled
+  ) {
+    params.set("enabled", filters.enabled);
+  }
+  if (filters.type && filters.type !== DEFAULT_KEYWORD_LIST_FILTERS.type) {
+    params.set("type", filters.type);
+  }
+  if (filters.platform) {
+    params.set("platform", filters.platform);
+  }
+  if (filters.search?.trim()) {
+    params.set("search", filters.search.trim());
+  }
+  if (filters.sort && filters.sort !== DEFAULT_KEYWORD_LIST_FILTERS.sort) {
+    params.set("sort", filters.sort);
+  }
+  return params;
+}
+
 export function Keywords() {
   const qc = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [newKw, setNewKw] = useState("");
   const [kwType, setKwType] = useState<"keyword" | "account">("keyword");
   const [platform, setPlatform] = useState("bilibili");
   const [accountId, setAccountId] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [listFilters, setListFilters] = useState<KeywordsListParams>(() =>
+    parseKeywordListFilters(searchParams),
+  );
+  const deferredSearch = useDeferredValue((listFilters.search || "").trim());
+
+  useEffect(() => {
+    const next = buildKeywordListSearchParams(listFilters).toString();
+    const current = searchParams.toString();
+    if (next !== current) {
+      setSearchParams(
+        next
+          ? buildKeywordListSearchParams(listFilters)
+          : new URLSearchParams(),
+        { replace: true },
+      );
+    }
+  }, [listFilters, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (listFilters.type !== "account" && listFilters.platform) {
+      setListFilters((current) => ({ ...current, platform: "" }));
+    }
+  }, [listFilters.platform, listFilters.type]);
+
+  const queryParams = useMemo<KeywordsListParams>(
+    () => ({
+      enabled: listFilters.enabled,
+      type: listFilters.type,
+      platform:
+        listFilters.type === "account" && listFilters.platform
+          ? listFilters.platform
+          : undefined,
+      search: deferredSearch || undefined,
+      sort: listFilters.sort,
+    }),
+    [deferredSearch, listFilters],
+  );
 
   const { data: keywords = [], isLoading } = useQuery({
-    queryKey: ["keywords"],
-    queryFn: keywordsApi.list,
+    queryKey: ["keywords", "list", queryParams],
+    queryFn: () => keywordsApi.list(queryParams),
   });
 
   const createMutation = useMutation({
@@ -108,6 +200,17 @@ export function Keywords() {
   };
 
   const currentPlatform = PLATFORMS.find((p) => p.value === platform);
+  const filterCount = [
+    listFilters.enabled !== "all",
+    listFilters.type !== "all",
+    !!listFilters.platform,
+    !!deferredSearch,
+    listFilters.sort !== "created_desc",
+  ].filter(Boolean).length;
+
+  const resetListFilters = () => {
+    setListFilters(DEFAULT_KEYWORD_LIST_FILTERS);
+  };
 
   return (
     <div>
@@ -206,6 +309,124 @@ export function Keywords() {
         </div>
       </form>
 
+      <div
+        className="mb-5 rounded-xl px-3 py-3 border space-y-3"
+        style={{
+          background: "rgba(255,255,255,0.02)",
+          borderColor: "rgba(255,255,255,0.05)",
+        }}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Search size={12} />
+            列表筛选
+            {filterCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-300 border border-blue-500/20">
+                {filterCount}
+              </span>
+            )}
+          </div>
+          {filterCount > 0 && (
+            <button
+              onClick={resetListFilters}
+              className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              type="button"
+            >
+              <ChevronUp size={12} className="rotate-45" />
+              重置
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-2">
+          <select
+            value={listFilters.enabled}
+            onChange={(event) =>
+              setListFilters((current) => ({
+                ...current,
+                enabled: event.target.value as KeywordsListParams["enabled"],
+              }))
+            }
+            className="hp-input"
+            aria-label="监控状态筛选"
+          >
+            <option value="all">全部状态</option>
+            <option value="enabled">仅监控中</option>
+            <option value="disabled">仅已停用</option>
+          </select>
+
+          <select
+            value={listFilters.type}
+            onChange={(event) =>
+              setListFilters((current) => ({
+                ...current,
+                type: event.target.value as KeywordsListParams["type"],
+              }))
+            }
+            className="hp-input"
+            aria-label="监控类型筛选"
+          >
+            <option value="all">全部类型</option>
+            <option value="keyword">仅关键词</option>
+            <option value="account">仅账号</option>
+          </select>
+
+          <select
+            value={listFilters.platform}
+            onChange={(event) =>
+              setListFilters((current) => ({
+                ...current,
+                platform: event.target.value,
+              }))
+            }
+            className="hp-input"
+            aria-label="平台筛选"
+            disabled={listFilters.type !== "account"}
+          >
+            <option value="">全部平台</option>
+            {PLATFORMS.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={listFilters.sort}
+            onChange={(event) =>
+              setListFilters((current) => ({
+                ...current,
+                sort: event.target.value as KeywordsListParams["sort"],
+              }))
+            }
+            className="hp-input"
+            aria-label="创建时间排序"
+          >
+            <option value="created_desc">最新创建</option>
+            <option value="created_asc">最早创建</option>
+          </select>
+
+          <label className="relative block">
+            <Search
+              size={14}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600"
+            />
+            <input
+              value={listFilters.search}
+              onChange={(event) =>
+                setListFilters((current) => ({
+                  ...current,
+                  search: event.target.value,
+                }))
+              }
+              placeholder="搜索名称或账号 ID..."
+              className="hp-input pl-9"
+              aria-label="搜索监控项"
+            />
+          </label>
+        </div>
+      </div>
+
       {/* Keywords list */}
       {isLoading ? (
         <div className="space-y-2">
@@ -227,7 +448,9 @@ export function Keywords() {
         >
           <Search size={28} className="mx-auto mb-3 text-slate-700" />
           <p className="text-sm text-slate-600">
-            暂无监控词，请添加你想追踪的热点关键词
+            {filterCount > 0
+              ? "当前筛选下暂无监控项，试试调整条件"
+              : "暂无监控词，请添加你想追踪的热点关键词"}
           </p>
         </div>
       ) : (

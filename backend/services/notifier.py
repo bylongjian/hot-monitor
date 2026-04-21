@@ -54,7 +54,7 @@ def _build_email_html(topic_data: dict) -> str:
 async def send_notification_email(topic_data: dict) -> bool:
     """发送热点通知邮件，返回是否成功"""
     settings = get_settings()
-    if not settings.SMTP_USER or settings.SMTP_USER == "your_email@gmail.com":
+    if not settings.SMTP_USER or settings.SMTP_USER == "your_email@example.com":
         logger.warning("SMTP 未配置，跳过邮件发送")
         return False
 

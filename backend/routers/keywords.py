@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from backend.database import get_db
 from backend.models import Keyword, Topic
 from backend.schemas import KeywordCreate, KeywordUpdate, KeywordOut, TopicOut
@@ -9,8 +9,44 @@ router = APIRouter(prefix="/api/v1/keywords", tags=["keywords"])
 
 
 @router.get("", response_model=list[KeywordOut])
-async def list_keywords(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Keyword).order_by(Keyword.created_at.desc()))
+async def list_keywords(
+    enabled: str = Query("all", pattern=r"^(all|enabled|disabled)$"),
+    type: str = Query("all", pattern=r"^(all|keyword|account)$"),
+    platform: str | None = None,
+    search: str | None = None,
+    sort: str = Query("created_desc", pattern=r"^(created_desc|created_asc)$"),
+    db: AsyncSession = Depends(get_db),
+):
+    query = select(Keyword)
+
+    if enabled == "enabled":
+        query = query.where(Keyword.enabled.is_(True))
+    elif enabled == "disabled":
+        query = query.where(Keyword.enabled.is_(False))
+
+    if type != "all":
+        query = query.where(Keyword.type == type)
+
+    trimmed_platform = (platform or "").strip()
+    if trimmed_platform:
+        query = query.where(Keyword.platform == trimmed_platform)
+
+    trimmed_search = (search or "").strip()
+    if trimmed_search:
+        search_term = f"%{trimmed_search}%"
+        query = query.where(
+            or_(
+                Keyword.keyword.ilike(search_term),
+                Keyword.account_id.ilike(search_term),
+            )
+        )
+
+    if sort == "created_asc":
+        query = query.order_by(Keyword.created_at.asc())
+    else:
+        query = query.order_by(Keyword.created_at.desc())
+
+    result = await db.execute(query)
     return result.scalars().all()
 
 

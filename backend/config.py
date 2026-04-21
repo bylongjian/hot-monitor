@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     NOTIFY_EMAIL: str = ""
 
     # App
-    SECRET_KEY: str = "dev-secret-key"
+    SECRET_KEY: str = "change-me-in-production"
     DATABASE_URL: str = "sqlite+aiosqlite:///./hot_monitor.db"
     DEFAULT_SCAN_INTERVAL: int = 60  # minutes
     MIN_HEAT_SCORE: int = 7  # 低于此分数的内容不入库

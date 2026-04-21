@@ -176,6 +176,14 @@ DELETE /api/v1/keywords/{id}      # 删除关键词
 GET    /api/v1/keywords/{id}/hits # 查询某关键词的命中历史
 ```
 
+关键词列表查询参数：
+
+- `enabled`: `all` / `enabled` / `disabled`
+- `type`: `all` / `keyword` / `account`
+- `platform`: 平台精确过滤
+- `search`: 名称或账号 ID 搜索
+- `sort`: `created_desc` / `created_asc`
+
 #### 热点内容
 
 ```
@@ -183,6 +191,16 @@ GET  /api/v1/topics               # 热点列表（支持分页、排序、过�
 GET  /api/v1/topics/{id}          # 热点详情
 POST /api/v1/topics/scan          # 手动触发一次全量扫描
 ```
+
+热点列表查询参数：
+
+- `sort`: `newest` / `heat` / `matched` / `unnotified`
+- `min_heat`: 最低热度过滤
+- `source_names`: 多来源过滤，前端以逗号拼接传递
+- `keyword_mode`: `all` / `matched` / `unmatched`
+- `time_range`: `all` / `6h` / `24h` / `48h` / `7d`
+- `tag`: 单标签过滤
+- `q`: 标题与摘要搜索
 
 #### 系统设置
 
@@ -301,6 +319,7 @@ Body:
 - 扫描期间通过 `scan_running` 防止重复触发
 - 前端根据真实扫描状态调整刷新频率，而不是固定盲刷
 - 扫描完成后统一刷新热点、关键词、命中记录和状态接口
+- 热点与监控词页面使用参数化 query key，扫描完成后通过前缀失效统一刷新所有筛选视图
 
 ### 6.1 X/Twitter AI 热点（优先级最高）
 
@@ -477,12 +496,18 @@ async def send_email(subject: str, body_html: str):
 **Dashboard（热点雷达）**
 
 - 四张统计卡：总热点 / 今日新增 / 紧急热点（≥9分）/ 监控词数量
-- 排序标签页（最新发现 / 热度综合 / 按来源）+ 筛选芯片（全部 / 高≥7 / 极热≥9）
+- 排序标签页（最新发现 / 热度最高 / 命中优先 / 未通知优先）
+- 筛选芯片（全部 / 中热≥5 / 高≥7 / 极热≥9）
+- 条件栏：关键词搜索、命中模式、时间范围
+- 来源和标签支持组合筛选，并将状态同步到 URL
+- 来源和标签列表默认折叠，点击“更多来源 / 更多标签”后展开完整选项
 - 热点卡片：徽章行（等级 + 来源头像 + 标签 + 可信标记 + 热分）→ 标题 → AI 摘要 → 展开原始内容
 
 **Keywords（关键词管理）**
 
 - 添加输入框（Enter 键提交）
+- 列表控制条：状态、类型、平台、创建时间排序、搜索
+- 列表筛选状态同步到 URL
 - 关键词卡片：状态开关、命中数、最后检查时间
 - 展开命中历史列表
 

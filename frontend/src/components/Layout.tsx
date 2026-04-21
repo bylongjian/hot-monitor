@@ -72,10 +72,10 @@ export function Layout({ children, status }: LayoutProps) {
     if (currentRunning) {
       setScanHint({ type: "info", message: "扫描执行中，完成后会自动刷新" });
     } else if (previousRunning && finishedChanged) {
-      qc.invalidateQueries({ queryKey: ["topics"] });
-      qc.invalidateQueries({ queryKey: ["keywords"] });
-      qc.invalidateQueries({ queryKey: ["keyword-hits"] });
-      qc.invalidateQueries({ queryKey: ["status"] });
+      qc.invalidateQueries({ queryKey: ["topics"], exact: false });
+      qc.invalidateQueries({ queryKey: ["keywords"], exact: false });
+      qc.invalidateQueries({ queryKey: ["keyword-hits"], exact: false });
+      qc.invalidateQueries({ queryKey: ["status"], exact: false });
       if (status.last_scan_error) {
         setScanHint({
           type: "error",
@@ -107,7 +107,7 @@ export function Layout({ children, status }: LayoutProps) {
         type: data.triggered ? "info" : "error",
         message: data.message || "扫描状态已更新",
       });
-      qc.invalidateQueries({ queryKey: ["status"] });
+      qc.invalidateQueries({ queryKey: ["status"], exact: false });
       if (!data.triggered) {
         scheduleHintClear(8000);
       }

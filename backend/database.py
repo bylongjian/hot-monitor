@@ -61,8 +61,12 @@ async def _migrate_indexes(conn):
         "CREATE INDEX IF NOT EXISTS idx_topics_discovered_at ON topics(discovered_at)",
         "CREATE INDEX IF NOT EXISTS idx_topics_keyword_id ON topics(keyword_id)",
         "CREATE INDEX IF NOT EXISTS idx_topics_heat_score ON topics(heat_score)",
+        "CREATE INDEX IF NOT EXISTS idx_topics_source_name ON topics(source_name)",
+        "CREATE INDEX IF NOT EXISTS idx_topics_is_notified ON topics(is_notified)",
         "CREATE INDEX IF NOT EXISTS idx_keywords_enabled ON keywords(enabled)",
         "CREATE INDEX IF NOT EXISTS idx_keywords_created_at ON keywords(created_at)",
+        "CREATE INDEX IF NOT EXISTS idx_keywords_platform ON keywords(platform)",
+        "CREATE INDEX IF NOT EXISTS idx_keywords_type ON keywords(type)",
     ]
 
     for statement in index_statements:
