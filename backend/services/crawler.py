@@ -7,6 +7,10 @@ from urllib.parse import quote_plus
 
 logger = logging.getLogger(__name__)
 
+
+def _build_engagement(**metrics) -> dict:
+    return {key: value for key, value in metrics.items() if value not in (None, "")}
+
 # ─── RSS 源列表 ─────────────────────────────────────────────────────────────────
 
 RSS_FEEDS = [
@@ -145,6 +149,8 @@ def fetch_reddit_items(min_score: int = 100, min_comments: int = 20) -> list[dic
                     "summary": f"⬆ {score} | 💬 {num_comments} — {selftext[:300]}".strip(),
                     "source_name": sub["name"],
                     "published_at": datetime.utcfromtimestamp(pd.get("created_utc", 0)),
+                    "engagement": _build_engagement(comments=num_comments),
+                    "source_metrics": _build_engagement(score=score, comments=num_comments),
                 })
         except Exception as e:
             logger.warning(f"Reddit 抓取失败 [{sub['name']}]: {e}")
@@ -186,6 +192,8 @@ def fetch_hn_items(limit: int = 20, min_score: int = 200, min_comments: int = 30
                             "summary": f"HN score: {item.get('score', 0)}, comments: {item.get('descendants', 0)}",
                             "source_name": "Hacker News",
                             "published_at": datetime.utcfromtimestamp(item.get("time", 0)),
+                            "engagement": _build_engagement(comments=item.get("descendants", 0)),
+                            "source_metrics": _build_engagement(score=item.get("score", 0), comments=item.get("descendants", 0)),
                         })
                         count += 1
                 except Exception:
@@ -227,7 +235,9 @@ def fetch_github_trending() -> list[dict]:
                 "url": repo_url,
                 "summary": desc[:500],
                 "source_name": "GitHub Trending",
-                "published_at": datetime.utcnow(),
+                "published_at": None,
+                "engagement": _build_engagement(stars=int(star_today or 0)),
+                "source_metrics": _build_engagement(stars_today=int(star_today or 0)),
             })
     except Exception as e:
         logger.warning(f"GitHub Trending 抓取失败: {e}")
@@ -373,7 +383,7 @@ def _search_duckduckgo(keyword: str, max_results: int = 10) -> list[dict]:
                     "url": url,
                     "summary": body,
                     "source_name": source,
-                    "published_at": datetime.utcnow(),
+                    "published_at": None,
                 })
     except Exception as e:
         logger.warning(f"DuckDuckGo 搜索失败 [{keyword}]: {e}")
@@ -432,7 +442,7 @@ def _search_baidu_news(keyword: str, max_results: int = 10) -> list[dict]:
                     "url": link,
                     "summary": "",
                     "source_name": "百度新闻",
-                    "published_at": datetime.utcnow(),
+                    "published_at": None,
                 })
     except Exception as e:
         logger.warning(f"百度新闻搜索失败 [{keyword}]: {e}")
@@ -465,7 +475,7 @@ def _search_toutiao(keyword: str, max_results: int = 10) -> list[dict]:
                     "url": article_url,
                     "summary": abstract,
                     "source_name": "今日头条",
-                    "published_at": datetime.utcnow(),
+                    "published_at": None,
                 })
     except Exception as e:
         logger.warning(f"今日头条搜索失败 [{keyword}]: {e}")
@@ -541,7 +551,7 @@ def _fetch_bilibili(uid: str, name: str) -> list[dict]:
                         "url": f"https://www.bilibili.com/video/{bvid}",
                         "summary": desc,
                         "source_name": f"B站 @{name or uid}",
-                        "published_at": datetime.utcnow(),
+                        "published_at": None,
                     })
             # 图文类型
             article = major.get("article", {})
@@ -554,7 +564,7 @@ def _fetch_bilibili(uid: str, name: str) -> list[dict]:
                         "url": f"https://www.bilibili.com/read/cv{art_id}" if art_id else "",
                         "summary": article.get("desc", "")[:500],
                         "source_name": f"B站 @{name or uid}",
-                        "published_at": datetime.utcnow(),
+                        "published_at": None,
                     })
     except Exception as e:
         logger.warning(f"B站动态抓取失败 [{uid}]: {e}")
@@ -593,7 +603,7 @@ def _fetch_zhihu(user_id: str, name: str) -> list[dict]:
                     "url": link,
                     "summary": excerpt,
                     "source_name": f"知乎 @{name or user_id}",
-                    "published_at": datetime.utcnow(),
+                    "published_at": None,
                 })
     except Exception as e:
         logger.warning(f"知乎抓取失败 [{user_id}]: {e}")
@@ -624,7 +634,7 @@ def _fetch_weibo(uid: str, name: str) -> list[dict]:
                     "url": f"https://m.weibo.cn/detail/{mid}",
                     "summary": text,
                     "source_name": f"微博 @{name or uid}",
-                    "published_at": datetime.utcnow(),
+                    "published_at": None,
                 })
     except Exception as e:
         logger.warning(f"微博抓取失败 [{uid}]: {e}")

@@ -1,8 +1,8 @@
 # hot-monitor 技术方案文档
 
-> 版本：v1.4  
+> 版本：v1.5  
 > 日期：2026-04-21  
-> 状态：Phase 1 已完成，已补齐扫描状态流、性能优化、账号监控、时间展示统一
+> 状态：Phase 1 已完成，已补齐扫描状态流、性能优化、账号监控、时间展示统一，并完成热点详情信息增强
 
 ---
 
@@ -140,9 +140,14 @@ hot-monitor/
 | is_notified   | BOOLEAN    | 是否已发送通知                       |
 | keyword_id    | INTEGER FK | 关联关键词（可为空，自动发现则为空） |
 | raw_content   | TEXT       | 原始抓取内容快照                     |
+| published_at  | DATETIME   | 原始发布时间，可为空                 |
+| relevance_score | INTEGER  | AI 关键词相关性评分，可为空          |
+| relevance_reason | TEXT    | AI 相关性理由，可为空                |
+| engagement    | TEXT       | 统一互动指标 JSON，可为空            |
+| source_metrics | TEXT      | 来源专属互动指标 JSON，可为空        |
 | discovered_at | DATETIME   | 发现时间                             |
 
-> 说明：数据库内部仍使用 naive UTC 时间存储，对外 API 响应层统一序列化为带 `Z` 的 UTC 时间字符串。
+> 说明：数据库内部仍使用 naive UTC 时间存储，对外 API 响应层统一序列化为带 `Z` 的 UTC 时间字符串；`source_type` 为响应层派生字段，不单独落库。
 
 ### 3.2 索引与性能
 
@@ -191,6 +196,16 @@ GET  /api/v1/topics               # 热点列表（支持分页、排序、过�
 GET  /api/v1/topics/{id}          # 热点详情
 POST /api/v1/topics/scan          # 手动触发一次全量扫描
 ```
+
+热点详情返回的增强字段：
+
+- `raw_content`: 原始描述/原始摘要
+- `source_type`: 来源分类，如 `官方` / `媒体` / `社区` / `社媒` / `代码`
+- `published_at`: 原始发布时间，可为空
+- `relevance_score`: AI 关键词相关性评分，仅关键词命中时通常有值
+- `relevance_reason`: AI 相关性理由，仅关键词命中时通常有值
+- `engagement`: 统一互动指标，如 `likes` / `comments` / `reposts` / `stars`
+- `source_metrics`: 来源专属指标，如 `score`、`stars_today`
 
 热点列表查询参数：
 
@@ -378,6 +393,7 @@ GET https://www.reddit.com/r/artificial/hot.json?limit=20
 - 扫描阶段先做来源聚合与预去重，减少无效 AI 分析调用
 - 关键词监控使用受控并发，降低整轮扫描耗时
 - UI 动效组件支持 reduced motion / 静态退化，减少常驻动画成本
+- 仅在抓取源明确提供发布时间时才写入 `published_at`，否则保持为空，避免伪造发布时间
 
 - **48 小时时效性过滤**：`published_at` 早于当前时间 48 小时的内容在 AI 分析前自动丢弃
 - **URL 去重**：新抓取内容与数据库已有 URL 去重，避免重复分析
@@ -501,7 +517,9 @@ async def send_email(subject: str, body_html: str):
 - 条件栏：关键词搜索、命中模式、时间范围
 - 来源和标签支持组合筛选，并将状态同步到 URL
 - 来源和标签列表默认折叠，点击“更多来源 / 更多标签”后展开完整选项
-- 热点卡片：徽章行（等级 + 来源头像 + 标签 + 可信标记 + 热分）→ 标题 → AI 摘要 → 展开原始内容
+- 页面级动作：支持“一键展开全部详情 / 收起全部详情”
+- 热点卡片：徽章行（等级 + 来源类型 + 来源头像 + 标签 + 可信标记 + 已推送标记 + 热分）→ 标题 → AI 摘要 → 互动指标 / 相关性分数 → 发布时间/抓取时间 → 展开详情
+- 展开详情：原始描述、AI 相关性理由、来源专属指标、原始链接、全部标签、抓取时间
 
 **Keywords（关键词管理）**
 
@@ -509,7 +527,7 @@ async def send_email(subject: str, body_html: str):
 - 列表控制条：状态、类型、平台、创建时间排序、搜索
 - 列表筛选状态同步到 URL
 - 关键词卡片：状态开关、命中数、最后检查时间
-- 展开命中历史列表
+- 展开命中历史列表，命中记录复用热点详情卡片并支持批量展开
 
 **Settings（设置）**
 

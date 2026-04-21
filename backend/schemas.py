@@ -51,18 +51,25 @@ class TopicOut(BaseModel):
     id: int
     title: str
     summary: str | None
+    raw_content: str | None
     source_url: str
     source_name: str
+    source_type: str
     heat_score: int
     tags: list[str]
     is_notified: bool
     keyword_id: int | None
+    published_at: datetime | None
+    relevance_score: int | None
+    relevance_reason: str | None
+    engagement: dict[str, int | float | str | None]
+    source_metrics: dict[str, int | float | str | None]
     discovered_at: datetime
 
     model_config = {"from_attributes": True}
 
-    @field_serializer("discovered_at")
-    def serialize_topic_datetime(self, value: datetime):
+    @field_serializer("published_at", "discovered_at")
+    def serialize_topic_datetime(self, value: datetime | None):
         return normalize_utc_datetime(value)
 
 

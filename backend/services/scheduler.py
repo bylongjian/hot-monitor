@@ -35,6 +35,17 @@ _scan_state: dict[str, object | None] = {
 NOTIFY_HEAT_THRESHOLD = 8  # 热度≥此值时发送通知（可被设置覆盖）
 
 
+def _normalize_metric_dict(metrics: dict | None) -> dict:
+    if not isinstance(metrics, dict):
+        return {}
+    normalized = {}
+    for key, value in metrics.items():
+        if value is None:
+            continue
+        normalized[str(key)] = value
+    return normalized
+
+
 async def _update_scan_state(**updates):
     async with _scan_state_lock:
         _scan_state.update(updates)
@@ -84,8 +95,13 @@ async def _save_topic(item: dict, keyword_id: int | None = None) -> Topic | None
                 heat_score=item.get("heat_score", 5),
                 keyword_id=keyword_id,
                 raw_content=item.get("summary", "")[:2000],
+                published_at=item.get("published_at"),
+                relevance_score=item.get("relevance_score"),
+                relevance_reason=item.get("relevance_reason"),
             )
             topic.tags = item.get("tags", [])
+            topic.engagement = _normalize_metric_dict(item.get("engagement"))
+            topic.source_metrics = _normalize_metric_dict(item.get("source_metrics"))
             db.add(topic)
             await db.commit()
             await db.refresh(topic)
@@ -193,7 +209,10 @@ async def auto_discover_task():
     # 时效性过滤：丢弃超过 48 小时的旧内容
     cutoff = datetime.utcnow() - timedelta(hours=48)
     before_fresh = len(new_items)
-    new_items = [it for it in new_items if it.get("published_at", datetime.utcnow()) >= cutoff]
+    new_items = [
+        it for it in new_items
+        if it.get("published_at") is None or it["published_at"] >= cutoff
+    ]
     stale = before_fresh - len(new_items)
     logger.info(f"抓取 {len(items)} 条，去重后 {before_fresh} 条，过滤旧内容 {stale} 条，待分析 {len(new_items)} 条")
 
@@ -215,6 +234,8 @@ async def _keyword_analyze_and_save(item: dict, kw, min_heat: int) -> bool:
             )
             if not relevance["is_relevant"] or relevance["relevance_score"] < 5:
                 return False
+            item["relevance_score"] = relevance["relevance_score"]
+            item["relevance_reason"] = relevance.get("reason")
 
     return await _analyze_and_save(item, min_heat, keyword_id=kw.id, keyword_name=kw.keyword)
 

@@ -22,12 +22,19 @@ export interface Topic {
   id: number;
   title: string;
   summary: string | null;
+  raw_content: string | null;
   source_url: string;
   source_name: string;
+  source_type: string;
   heat_score: number;
   tags: string[];
   is_notified: boolean;
   keyword_id: number | null;
+  published_at: string | null;
+  relevance_score: number | null;
+  relevance_reason: string | null;
+  engagement: Record<string, number | string | null>;
+  source_metrics: Record<string, number | string | null>;
   discovered_at: string;
 }
 

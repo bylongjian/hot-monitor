@@ -4,6 +4,7 @@ from sqlalchemy import or_, select
 from backend.database import get_db
 from backend.models import Keyword, Topic
 from backend.schemas import KeywordCreate, KeywordUpdate, KeywordOut, TopicOut
+from backend.routers.topics import _build_topic_out
 
 router = APIRouter(prefix="/api/v1/keywords", tags=["keywords"])
 
@@ -110,18 +111,4 @@ async def keyword_hits(
         .limit(limit)
     )
     topics = result.scalars().all()
-    out = []
-    for t in topics:
-        out.append(TopicOut(
-            id=t.id,
-            title=t.title,
-            summary=t.summary,
-            source_url=t.source_url,
-            source_name=t.source_name,
-            heat_score=t.heat_score,
-            tags=t.tags,
-            is_notified=t.is_notified,
-            keyword_id=t.keyword_id,
-            discovered_at=t.discovered_at,
-        ))
-    return out
+    return [_build_topic_out(topic) for topic in topics]

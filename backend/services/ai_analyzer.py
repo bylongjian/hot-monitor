@@ -93,9 +93,9 @@ def analyze_topic(title: str, content: str) -> dict:
 def check_keyword_relevance(keyword: str, title: str, content: str) -> dict:
     """
     判断内容是否与关键词真实相关。
-    返回：{"is_relevant": bool, "relevance_score": int}
+    返回：{"is_relevant": bool, "relevance_score": int, "reason": str}
     """
-    default = {"is_relevant": True, "relevance_score": 5}
+    default = {"is_relevant": True, "relevance_score": 5, "reason": "AI 未返回相关性理由"}
 
     system_prompt = (
         f'判断以下内容是否与关键词 "{keyword}" 真实相关（非关键词堆砌、非标题党、非广告）。\n'
@@ -119,6 +119,7 @@ def check_keyword_relevance(keyword: str, title: str, content: str) -> dict:
         return {
             "is_relevant": bool(result.get("is_relevant", True)),
             "relevance_score": max(0, min(10, int(result.get("relevance_score", 5)))),
+            "reason": str(result.get("reason", "AI 未提供理由"))[:300],
         }
     except (json.JSONDecodeError, ValueError) as e:
         logger.warning(f"关键词相关性 JSON 解析失败: {e}")

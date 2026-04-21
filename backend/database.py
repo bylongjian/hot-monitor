@@ -28,6 +28,7 @@ async def init_db():
         await conn.run_sync(Base.metadata.create_all)
         # 增量迁移：给 keywords 表补充新列（如果不存在）
         await _migrate_keywords_columns(conn)
+        await _migrate_topics_columns(conn)
         await _migrate_indexes(conn)
 
 
@@ -52,6 +53,25 @@ async def _migrate_keywords_columns(conn):
         )
 
 
+async def _migrate_topics_columns(conn):
+    """为 topics 表添加扩展详情列（如果缺失）"""
+    import sqlalchemy as sa
+
+    result = await conn.execute(sa.text("PRAGMA table_info(topics)"))
+    existing_cols = {row[1] for row in result.fetchall()}
+
+    if "published_at" not in existing_cols:
+        await conn.execute(sa.text("ALTER TABLE topics ADD COLUMN published_at DATETIME"))
+    if "relevance_score" not in existing_cols:
+        await conn.execute(sa.text("ALTER TABLE topics ADD COLUMN relevance_score INTEGER"))
+    if "relevance_reason" not in existing_cols:
+        await conn.execute(sa.text("ALTER TABLE topics ADD COLUMN relevance_reason TEXT"))
+    if "engagement" not in existing_cols:
+        await conn.execute(sa.text("ALTER TABLE topics ADD COLUMN engagement TEXT"))
+    if "source_metrics" not in existing_cols:
+        await conn.execute(sa.text("ALTER TABLE topics ADD COLUMN source_metrics TEXT"))
+
+
 async def _migrate_indexes(conn):
     """为热点与关键词表补充性能索引（如果缺失）"""
     import sqlalchemy as sa
@@ -59,6 +79,7 @@ async def _migrate_indexes(conn):
     index_statements = [
         "CREATE INDEX IF NOT EXISTS idx_topics_source_url ON topics(source_url)",
         "CREATE INDEX IF NOT EXISTS idx_topics_discovered_at ON topics(discovered_at)",
+        "CREATE INDEX IF NOT EXISTS idx_topics_published_at ON topics(published_at)",
         "CREATE INDEX IF NOT EXISTS idx_topics_keyword_id ON topics(keyword_id)",
         "CREATE INDEX IF NOT EXISTS idx_topics_heat_score ON topics(heat_score)",
         "CREATE INDEX IF NOT EXISTS idx_topics_source_name ON topics(source_name)",

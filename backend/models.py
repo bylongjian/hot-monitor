@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timezone
+from typing import Any
 from sqlalchemy import Integer, String, Boolean, DateTime, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.database import Base
@@ -40,6 +41,11 @@ class Topic(Base):
     is_notified: Mapped[bool] = mapped_column(Boolean, default=False)
     keyword_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("keywords.id"), nullable=True, index=True)
     raw_content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    relevance_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    relevance_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    _engagement: Mapped[str | None] = mapped_column("engagement", Text, nullable=True)
+    _source_metrics: Mapped[str | None] = mapped_column("source_metrics", Text, nullable=True)
     discovered_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
 
     keyword_ref: Mapped["Keyword | None"] = relationship("Keyword", back_populates="topics")
@@ -54,6 +60,34 @@ class Topic(Base):
     @tags.setter
     def tags(self, value: list[str]):
         self._tags = json.dumps(value, ensure_ascii=False)
+
+    @property
+    def engagement(self) -> dict[str, Any]:
+        if not self._engagement:
+            return {}
+        try:
+            parsed = json.loads(self._engagement)
+            return parsed if isinstance(parsed, dict) else {}
+        except Exception:
+            return {}
+
+    @engagement.setter
+    def engagement(self, value: dict[str, Any] | None):
+        self._engagement = json.dumps(value or {}, ensure_ascii=False)
+
+    @property
+    def source_metrics(self) -> dict[str, Any]:
+        if not self._source_metrics:
+            return {}
+        try:
+            parsed = json.loads(self._source_metrics)
+            return parsed if isinstance(parsed, dict) else {}
+        except Exception:
+            return {}
+
+    @source_metrics.setter
+    def source_metrics(self, value: dict[str, Any] | None):
+        self._source_metrics = json.dumps(value or {}, ensure_ascii=False)
 
 
 class Setting(Base):

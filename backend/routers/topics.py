@@ -11,6 +11,41 @@ from backend.services.scheduler import is_scan_running, trigger_scan_now
 router = APIRouter(prefix="/api/v1/topics", tags=["topics"])
 
 
+def _infer_source_type(source_name: str) -> str:
+    lower_name = source_name.lower()
+    if "github" in lower_name:
+        return "代码"
+    if any(token in lower_name for token in ["openai", "deepmind", "huggingface"]):
+        return "官方"
+    if any(token in lower_name for token in ["reddit", "hacker news", "hn", "v2ex"]):
+        return "社区"
+    if any(token in lower_name for token in ["x ", "x@", "x搜索", "twitter", "微博", "知乎", "b站"]):
+        return "社媒"
+    return "媒体"
+
+
+def _build_topic_out(topic: Topic) -> TopicOut:
+    return TopicOut(
+        id=topic.id,
+        title=topic.title,
+        summary=topic.summary,
+        raw_content=topic.raw_content,
+        source_url=topic.source_url,
+        source_name=topic.source_name,
+        source_type=_infer_source_type(topic.source_name),
+        heat_score=topic.heat_score,
+        tags=topic.tags,
+        is_notified=topic.is_notified,
+        keyword_id=topic.keyword_id,
+        published_at=topic.published_at,
+        relevance_score=topic.relevance_score,
+        relevance_reason=topic.relevance_reason,
+        engagement=topic.engagement,
+        source_metrics=topic.source_metrics,
+        discovered_at=topic.discovered_at,
+    )
+
+
 @router.get("", response_model=list[TopicOut])
 async def list_topics(
     limit: int = 50,
@@ -76,21 +111,7 @@ async def list_topics(
 
     result = await db.execute(query.offset(offset).limit(limit))
     topics = result.scalars().all()
-    out = []
-    for t in topics:
-        out.append(TopicOut(
-            id=t.id,
-            title=t.title,
-            summary=t.summary,
-            source_url=t.source_url,
-            source_name=t.source_name,
-            heat_score=t.heat_score,
-            tags=t.tags,
-            is_notified=t.is_notified,
-            keyword_id=t.keyword_id,
-            discovered_at=t.discovered_at,
-        ))
-    return out
+    return [_build_topic_out(topic) for topic in topics]
 
 
 @router.get("/{topic_id}", response_model=TopicOut)
@@ -99,18 +120,7 @@ async def get_topic(topic_id: int, db: AsyncSession = Depends(get_db)):
     t = await db.get(Topic, topic_id)
     if not t:
         raise HTTPException(status_code=404, detail="热点不存在")
-    return TopicOut(
-        id=t.id,
-        title=t.title,
-        summary=t.summary,
-        source_url=t.source_url,
-        source_name=t.source_name,
-        heat_score=t.heat_score,
-        tags=t.tags,
-        is_notified=t.is_notified,
-        keyword_id=t.keyword_id,
-        discovered_at=t.discovered_at,
-    )
+    return _build_topic_out(t)
 
 
 @router.post("/scan", response_model=ScanResponse)

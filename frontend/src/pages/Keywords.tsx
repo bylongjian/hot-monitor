@@ -587,6 +587,7 @@ function KeywordHits({
   keywordId: number;
   active: boolean;
 }) {
+  const [expandedTopicIds, setExpandedTopicIds] = useState<number[]>([]);
   const {
     data: hits = [],
     isLoading,
@@ -597,6 +598,28 @@ function KeywordHits({
     enabled: active,
     staleTime: 60000,
   });
+
+  const visibleHits = hits.slice(0, 5);
+  const allExpanded =
+    visibleHits.length > 0 &&
+    visibleHits.every((topic) => expandedTopicIds.includes(topic.id));
+
+  const toggleAllExpanded = () => {
+    if (allExpanded) {
+      setExpandedTopicIds([]);
+      return;
+    }
+    setExpandedTopicIds(visibleHits.map((topic) => topic.id));
+  };
+
+  const handleExpandedChange = (topicId: number, nextExpanded: boolean) => {
+    setExpandedTopicIds((current) => {
+      if (nextExpanded) {
+        return current.includes(topicId) ? current : [...current, topicId];
+      }
+      return current.filter((id) => id !== topicId);
+    });
+  };
 
   if (isLoading) {
     return <p className="text-xs px-1 text-slate-600">加载中...</p>;
@@ -616,8 +639,23 @@ function KeywordHits({
 
   return (
     <div className="space-y-2">
-      {hits.slice(0, 5).map((topic) => (
-        <HotCard key={topic.id} topic={topic} />
+      <div className="flex items-center justify-end">
+        <button
+          onClick={toggleAllExpanded}
+          className="text-[11px] rounded-lg border border-white/[0.06] px-2.5 py-1 text-slate-500 transition-colors hover:text-slate-300"
+        >
+          {allExpanded ? "收起全部详情" : "展开全部详情"}
+        </button>
+      </div>
+      {visibleHits.map((topic) => (
+        <HotCard
+          key={topic.id}
+          topic={topic}
+          expanded={expandedTopicIds.includes(topic.id)}
+          onExpandedChange={(nextExpanded) =>
+            handleExpandedChange(topic.id, nextExpanded)
+          }
+        />
       ))}
     </div>
   );

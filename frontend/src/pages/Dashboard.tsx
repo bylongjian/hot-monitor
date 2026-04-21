@@ -171,6 +171,7 @@ export function Dashboard() {
   const [showAllSources, setShowAllSources] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
   const [visibleCount, setVisibleCount] = useState(30);
+  const [expandedTopicIds, setExpandedTopicIds] = useState<number[]>([]);
   const deferredSearch = useDeferredValue(filters.q.trim());
 
   useEffect(() => {
@@ -295,6 +296,7 @@ export function Dashboard() {
 
   useEffect(() => {
     setVisibleCount(30);
+    setExpandedTopicIds([]);
   }, [listParams]);
 
   const filterCount = [
@@ -307,6 +309,9 @@ export function Dashboard() {
   ].filter(Boolean).length;
   const visibleTopics = topics.slice(0, visibleCount);
   const hasMoreTopics = topics.length > visibleCount;
+  const allVisibleExpanded =
+    visibleTopics.length > 0 &&
+    visibleTopics.every((topic) => expandedTopicIds.includes(topic.id));
 
   const resetFilters = () => {
     setFilters(DEFAULT_DASHBOARD_FILTERS);
@@ -319,6 +324,26 @@ export function Dashboard() {
         ? current.sourceNames.filter((item) => item !== sourceName)
         : [...current.sourceNames, sourceName],
     }));
+  };
+
+  const toggleAllExpanded = () => {
+    if (allVisibleExpanded) {
+      setExpandedTopicIds([]);
+      return;
+    }
+    setExpandedTopicIds(visibleTopics.map((topic) => topic.id));
+  };
+
+  const handleTopicExpandedChange = (
+    topicId: number,
+    nextExpanded: boolean,
+  ) => {
+    setExpandedTopicIds((current) => {
+      if (nextExpanded) {
+        return current.includes(topicId) ? current : [...current, topicId];
+      }
+      return current.filter((id) => id !== topicId);
+    });
   };
 
   return (
@@ -365,7 +390,15 @@ export function Dashboard() {
           <Flame size={15} className="text-orange-400" />
           实时热点流
         </h2>
-        <span className="text-xs text-slate-600">扫描完成后自动刷新</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleAllExpanded}
+            className="text-xs rounded-lg border border-white/[0.06] px-3 py-1.5 text-slate-400 transition-colors hover:text-slate-200"
+          >
+            {allVisibleExpanded ? "收起全部详情" : "展开全部详情"}
+          </button>
+          <span className="text-xs text-slate-600">扫描完成后自动刷新</span>
+        </div>
       </div>
 
       {/* ── Sort + Filter Bar ── */}
@@ -683,7 +716,15 @@ export function Dashboard() {
       ) : (
         <div className="space-y-2 relative z-10">
           {visibleTopics.map((topic, i) => (
-            <HotCard key={topic.id} topic={topic} animate={i < 5} />
+            <HotCard
+              key={topic.id}
+              topic={topic}
+              animate={i < 5}
+              expanded={expandedTopicIds.includes(topic.id)}
+              onExpandedChange={(nextExpanded) =>
+                handleTopicExpandedChange(topic.id, nextExpanded)
+              }
+            />
           ))}
           {hasMoreTopics && (
             <button

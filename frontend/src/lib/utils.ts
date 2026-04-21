@@ -90,3 +90,17 @@ export function formatFullTime(iso: string) {
     hour12: false,
   });
 }
+
+export function formatCompactNumber(value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === "") return "";
+  const numericValue = typeof value === "number" ? value : Number(value);
+  if (Number.isNaN(numericValue)) return String(value);
+
+  if (Math.abs(numericValue) >= 1000000) {
+    return `${(numericValue / 1000000).toFixed(numericValue >= 10000000 ? 0 : 1)}M`;
+  }
+  if (Math.abs(numericValue) >= 1000) {
+    return `${(numericValue / 1000).toFixed(numericValue >= 10000 ? 0 : 1)}k`;
+  }
+  return String(numericValue);
+}
