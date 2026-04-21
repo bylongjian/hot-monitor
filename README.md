@@ -3,6 +3,15 @@
 > AI 编程博主专属热点监控工具，自动发现 AI 领域热点并推送通知。
 > 默认 AI 模型：`deepseek/deepseek-v3.2`（via OpenRouter）
 
+## 当前版本亮点
+
+- 统一扫描状态：手动扫描与定时扫描共用一套状态机，避免重复触发
+- 更顺滑的前端刷新：扫描中短轮询，空闲时长轮询，减少页面卡顿
+- 关键词与账号监控：支持普通关键词，也支持平台账号追踪
+- 热点时间展示优化：统一输出 UTC 时间，前端显示为常见产品风格时间文案
+- 动效降噪：保留科技感，但对常驻动画做了减负并兼容 reduced motion
+- SQLite 索引优化：热点、关键词、命中记录查询更稳定
+
 ## 前置要求
 
 - Python 3.11+
@@ -47,6 +56,14 @@ python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
 
 访问 http://localhost:8000 即可使用。
 
+如果 `8000` 端口已被其他进程占用，可临时改用：
+
+```bash
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8001
+```
+
+然后访问 http://localhost:8001 。
+
 ## 配置说明（.env）
 
 | 变量                               | 必填 | 说明                                                          |
@@ -58,6 +75,15 @@ python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
 | WEBHOOK_URL                        | 可选 | Webhook 通知（飞书/钉钉等）                                   |
 | SCAN_INTERVAL_MINUTES              | 可选 | 扫描间隔，默认 60 分钟                                        |
 | NOTIFY_HEAT_THRESHOLD              | 可选 | 通知热度阈值，默认 7                                          |
+| MIN_HEAT_SCORE                     | 可选 | 最低入库热度，默认 7，低于该值的内容不会进入数据库            |
+
+## 主要功能
+
+- 热点雷达：查看 AI 热点流，支持时间/热度/来源排序与筛选
+- 监控词：管理关键词与平台账号，查看命中历史与最近检查时间
+- 设置页：配置 OpenRouter、扫描频率、最低入库热度、通知阈值、SMTP 邮件
+- 立即扫描：触发一次后台全量扫描，页面会根据真实扫描状态自动刷新
+- 状态提示：顶部显示调度器状态、扫描结果提示与最近扫描时间
 
 ## 重新构建前端
 
@@ -71,6 +97,15 @@ npm run build
 
 默认从以下地址抓取：
 
-- OpenAI / Anthropic / HuggingFace / Google AI / DeepMind RSS
-- Hacker News Top Stories
-- DuckDuckGo 搜索（按关键词）
+- **RSS 聚合**：OpenAI Blog、Google DeepMind、HuggingFace、TechCrunch AI、VentureBeat AI、机器之心、量子位
+- **X/Twitter AI 热点**：通过 Nitter 实例抓取 AI 领域关键账号动态；当 Nitter 不可用时自动回退到 Google News 搜索 AI+Twitter 相关内容
+- **Hacker News** Top Stories（按评分过滤）
+- **Reddit**：r/MachineLearning、r/artificial（JSON API）
+- **GitHub Trending**：每日热门仓库
+- **搜索引擎**：DuckDuckGo + Bing News（按关键词）
+
+### 内容质量保障
+
+- **48 小时时效性过滤**：发布时间超过 48 小时的内容在 AI 分析前自动丢弃
+- **AI 时效性评分**：AI 分析提示词明确要求区分时效性，旧闻/科普/广告类内容评分 1-3 分，不会入库
+- **时间输出统一为 UTC**：后端 API 统一返回带 `Z` 的时间字符串，避免前端显示慢 8 小时等时区偏差

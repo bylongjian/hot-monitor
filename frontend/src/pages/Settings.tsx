@@ -82,6 +82,21 @@ export function SettingsPage() {
     );
   }
 
+  if (!data) {
+    return (
+      <div
+        className="max-w-xl rounded-xl px-5 py-10 text-center"
+        style={{
+          background: "rgba(127,29,29,0.12)",
+          border: "1px solid rgba(248,113,113,0.15)",
+        }}
+      >
+        <AlertCircle size={28} className="mx-auto mb-3 text-red-300" />
+        <p className="text-sm text-red-200">设置加载失败，请刷新后重试</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-xl">
       <div className="mb-6">
@@ -180,6 +195,25 @@ export function SettingsPage() {
             <span>5</span>
             <span>10</span>
           </div>
+        </Field>
+
+        <Field label={`最低入库热度：≥ ${form.min_heat_score ?? 7} 分`}>
+          <input
+            type="range"
+            min={1}
+            max={10}
+            value={form.min_heat_score ?? 7}
+            onChange={(e) => set("min_heat_score", Number(e.target.value))}
+            className="w-full h-1.5 accent-cyan-500 rounded-full"
+          />
+          <div className="flex justify-between text-xs mt-1 text-slate-600">
+            <span>1（全部入库）</span>
+            <span>7（推荐）</span>
+            <span>10</span>
+          </div>
+          <p className="text-xs mt-1 text-slate-600">
+            AI 评分低于此值的内容不会写入数据库
+          </p>
         </Field>
       </Section>
 

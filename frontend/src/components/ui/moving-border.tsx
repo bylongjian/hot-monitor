@@ -5,6 +5,7 @@ import {
   useAnimationFrame,
   useMotionTemplate,
   useMotionValue,
+  useReducedMotion,
   useTransform,
 } from "framer-motion";
 import { cn } from "../../lib/utils";
@@ -32,8 +33,11 @@ export function MovingBorder({
 }) {
   const pathRef = useRef<SVGRectElement>(null);
   const progress = useMotionValue<number>(0);
+  const shouldReduceMotion = useReducedMotion();
+  const shouldAnimate = !shouldReduceMotion && duration > 0;
 
   useAnimationFrame((time) => {
+    if (!shouldAnimate) return;
     const length = pathRef.current?.getTotalLength();
     if (length) {
       const pxPerMs = length / duration;
@@ -75,26 +79,36 @@ export function MovingBorder({
             ref={pathRef}
           />
         </svg>
-        <motion.div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            display: "inline-block",
-            transform,
-          }}
-        >
-          <div
-            className={cn(
-              "h-20 w-20 opacity-[0.8] blur-[12px]",
-              borderClassName,
-            )}
+        {shouldAnimate ? (
+          <motion.div
             style={{
-              background:
-                "radial-gradient(#3b82f6 40%, #06b6d4 60%, transparent 80%)",
+              position: "absolute",
+              top: 0,
+              left: 0,
+              display: "inline-block",
+              transform,
+            }}
+          >
+            <div
+              className={cn(
+                "h-20 w-20 opacity-[0.8] blur-[12px]",
+                borderClassName,
+              )}
+              style={{
+                background:
+                  "radial-gradient(#3b82f6 40%, #06b6d4 60%, transparent 80%)",
+              }}
+            />
+          </motion.div>
+        ) : (
+          <div
+            className="absolute inset-0 opacity-60"
+            style={{
+              borderRadius: "inherit",
+              boxShadow: "inset 0 0 0 1px rgba(34,211,238,0.35)",
             }}
           />
-        </motion.div>
+        )}
       </div>
       <div
         className={cn("relative z-10 flex items-center gap-2", className)}

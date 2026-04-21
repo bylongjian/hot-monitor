@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "dev-secret-key"
     DATABASE_URL: str = "sqlite+aiosqlite:///./hot_monitor.db"
     DEFAULT_SCAN_INTERVAL: int = 60  # minutes
+    MIN_HEAT_SCORE: int = 7  # 低于此分数的内容不入库
 
 
 @lru_cache

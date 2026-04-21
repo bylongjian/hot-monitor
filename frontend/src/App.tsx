@@ -10,7 +10,11 @@ export default function App() {
   const { data: status } = useQuery({
     queryKey: ["status"],
     queryFn: settingsApi.status,
-    refetchInterval: 15000,
+    refetchInterval: (query) =>
+      query.state.data?.scan_running ? 3000 : 60000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    staleTime: 10000,
   });
 
   return (

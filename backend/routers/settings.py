@@ -6,7 +6,7 @@ from backend.database import get_db
 from backend.models import Setting, Topic, Keyword
 from backend.schemas import SettingsPayload, SettingsOut, StatusOut
 from backend.config import get_settings
-from backend.services.scheduler import get_scheduler, update_scan_interval
+from backend.services.scheduler import get_scheduler, get_scan_status, update_scan_interval
 from backend.services.notifier import send_test_email
 
 router = APIRouter(prefix="/api/v1/settings", tags=["settings"])
@@ -21,6 +21,7 @@ DEFAULT_SETTINGS = {
     "openrouter_api_key": "",
     "ai_model": "deepseek/deepseek-v3.2",
     "notify_heat_threshold": "8",
+    "min_heat_score": "7",
 }
 
 
@@ -56,6 +57,7 @@ async def get_settings_api(db: AsyncSession = Depends(get_db)):
         smtp_user=s.get("smtp_user", ""),
         ai_model=s.get("ai_model", "deepseek/deepseek-v3.2"),
         notify_heat_threshold=int(s.get("notify_heat_threshold", 8)),
+        min_heat_score=int(s.get("min_heat_score", 7)),
     )
 
 
@@ -80,6 +82,8 @@ async def update_settings_api(payload: SettingsPayload, db: AsyncSession = Depen
         updates["ai_model"] = payload.ai_model
     if payload.notify_heat_threshold is not None:
         updates["notify_heat_threshold"] = str(payload.notify_heat_threshold)
+    if payload.min_heat_score is not None:
+        updates["min_heat_score"] = str(payload.min_heat_score)
 
     from datetime import datetime
     now = datetime.utcnow()
@@ -128,9 +132,10 @@ async def test_email():
 @router.get("/status", response_model=StatusOut)
 async def get_status(db: AsyncSession = Depends(get_db)):
     sched = get_scheduler()
+    scan_status = await get_scan_status()
     next_run = None
     if sched.running:
-        job = sched.get_job("auto_discover")
+        job = sched.get_job("scan_runner")
         if job and job.next_run_time:
             next_run = job.next_run_time.isoformat()
 
@@ -142,4 +147,10 @@ async def get_status(db: AsyncSession = Depends(get_db)):
         next_run=next_run,
         total_topics=total_topics,
         total_keywords=total_keywords,
+        scan_running=bool(scan_status["is_running"]),
+        scan_started_at=scan_status["started_at"],
+        scan_finished_at=scan_status["finished_at"],
+        last_scan_success_at=scan_status["last_success_at"],
+        last_scan_duration_seconds=scan_status["last_duration_seconds"],
+        last_scan_error=scan_status["last_error"],
     )

@@ -4,7 +4,7 @@ from sqlalchemy import select, func
 from backend.database import get_db
 from backend.models import Topic
 from backend.schemas import TopicOut, ScanResponse
-from backend.services.scheduler import trigger_scan_now
+from backend.services.scheduler import is_scan_running, trigger_scan_now
 
 router = APIRouter(prefix="/api/v1/topics", tags=["topics"])
 
@@ -63,5 +63,7 @@ async def get_topic(topic_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.post("/scan", response_model=ScanResponse)
 async def manual_scan(background_tasks: BackgroundTasks):
+    if await is_scan_running():
+        return ScanResponse(message="已有扫描任务正在执行，请稍后查看结果", triggered=False)
     background_tasks.add_task(trigger_scan_now)
     return ScanResponse(message="扫描任务已触发，正在后台执行", triggered=True)

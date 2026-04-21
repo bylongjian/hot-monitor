@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "../../lib/utils";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 export const BackgroundGradient = ({
   children,
@@ -13,6 +13,9 @@ export const BackgroundGradient = ({
   containerClassName?: string;
   animate?: boolean;
 }) => {
+  const shouldReduceMotion = useReducedMotion();
+  const shouldAnimate = animate && !shouldReduceMotion;
+
   const variants = {
     initial: { backgroundPosition: "0 50%" },
     animate: {
@@ -23,12 +26,12 @@ export const BackgroundGradient = ({
   return (
     <div className={cn("relative p-[1px] group", containerClassName)}>
       <motion.div
-        variants={animate ? variants : undefined}
-        initial={animate ? "initial" : undefined}
-        animate={animate ? "animate" : undefined}
+        variants={shouldAnimate ? variants : undefined}
+        initial={shouldAnimate ? "initial" : undefined}
+        animate={shouldAnimate ? "animate" : undefined}
         transition={
-          animate
-            ? { duration: 5, repeat: Infinity, repeatType: "reverse" }
+          shouldAnimate
+            ? { duration: 10, repeat: Infinity, repeatType: "reverse" }
             : undefined
         }
         style={{ backgroundSize: "400% 400%" }}
@@ -38,12 +41,12 @@ export const BackgroundGradient = ({
         )}
       />
       <motion.div
-        variants={animate ? variants : undefined}
-        initial={animate ? "initial" : undefined}
-        animate={animate ? "animate" : undefined}
+        variants={shouldAnimate ? variants : undefined}
+        initial={shouldAnimate ? "initial" : undefined}
+        animate={shouldAnimate ? "animate" : undefined}
         transition={
-          animate
-            ? { duration: 5, repeat: Infinity, repeatType: "reverse" }
+          shouldAnimate
+            ? { duration: 10, repeat: Infinity, repeatType: "reverse" }
             : undefined
         }
         style={{ backgroundSize: "400% 400%" }}

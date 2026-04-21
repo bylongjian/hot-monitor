@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useCallback } from "react";
+import { useReducedMotion } from "framer-motion";
 import { cn } from "../../lib/utils";
 
 interface SparklesCoreProps {
@@ -22,6 +23,7 @@ export const SparklesCore = ({
   className,
 }: SparklesCoreProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const shouldReduceMotion = useReducedMotion();
   const particles = useRef<
     {
       x: number;
@@ -49,7 +51,7 @@ export const SparklesCore = ({
   const initParticles = useCallback(
     (w: number, h: number) => {
       const count = Math.floor((w * h) / (10000 / particleDensity));
-      particles.current = Array.from({ length: Math.min(count, 150) }, () => ({
+      particles.current = Array.from({ length: Math.min(count, 60) }, () => ({
         x: Math.random() * w,
         y: Math.random() * h,
         size: Math.random() * (maxSize - minSize) + minSize,
@@ -82,8 +84,25 @@ export const SparklesCore = ({
 
     const rgb = hexToRgb(particleColor);
 
-    const animate = () => {
+    const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.current.forEach((p) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${Math.max(0, Math.min(1, p.opacity))})`;
+        ctx.fill();
+      });
+    };
+
+    if (shouldReduceMotion) {
+      draw();
+      return () => {
+        ro.disconnect();
+      };
+    }
+
+    const animate = () => {
+      draw();
       particles.current.forEach((p) => {
         p.x += p.speedX;
         p.y += p.speedY;
@@ -106,7 +125,7 @@ export const SparklesCore = ({
       cancelAnimationFrame(animationRef.current);
       ro.disconnect();
     };
-  }, [particleColor, initParticles]);
+  }, [particleColor, initParticles, shouldReduceMotion]);
 
   return (
     <canvas

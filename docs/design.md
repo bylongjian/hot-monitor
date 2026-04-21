@@ -1,8 +1,8 @@
 # hot-monitor 技术方案文档
 
-> 版本：v1.2  
-> 日期：2026-04-20  
-> 状态：Phase 1 已完成，UI 已重构为 Aceternity 风格
+> 版本：v1.4  
+> 日期：2026-04-21  
+> 状态：Phase 1 已完成，已补齐扫描状态流、性能优化、账号监控、时间展示统一
 
 ---
 
@@ -22,7 +22,7 @@
 │  │  /api/v1/*  │  │  (React 前端)      │   │
 │  └─────────────┘  └────────────────────┘   │
 │  ┌─────────────────────────────────────┐   │
-│  │         APScheduler (后台定时)       │   │
+│  │ APScheduler + Scan State Coordinator│   │
 │  └─────────────────────────────────────┘   │
 └─────────────────┬───────────────────────────┘
                   │
@@ -46,7 +46,7 @@
 | 样式     | Tailwind CSS                  | 3.4       | 高效定制                           |
 | UI 动效  | Aceternity UI + Framer Motion | 12.x      | 科技感组件 + 流畅动画引擎          |
 | 工具库   | clsx + tailwind-merge         | 2.x / 3.x | className 合并工具                 |
-| 前端状态 | TanStack Query                | 5.x       | 数据请求/缓存                      |
+| 前端状态 | TanStack Query                | 5.x       | 数据请求/缓存 + 动态刷新控制       |
 | 路由     | React Router                  | 7.x       | SPA 路由                           |
 | 图标     | Lucide React                  | 1.x       | 轻量 SVG 图标库                    |
 | 部署     | 单进程运行                    | -         | FastAPI 托管前端静态文件           |
@@ -73,7 +73,7 @@ hot-monitor/
 │   │   └── settings.py        # 通知/扫描配置
 │   └── services/
 │       ├── __init__.py
-│       ├── crawler.py         # RSS + HN + DuckDuckGo 数据抓取
+│       ├── crawler.py         # X/Twitter + RSS + HN + Reddit + GitHub + 搜索引擎数据抓取
 │       ├── ai_analyzer.py     # OpenRouter 调用封装
 │       ├── notifier.py        # 邮件 + Webhook 通知
 │       └── scheduler.py       # APScheduler 任务管理
@@ -88,14 +88,14 @@ hot-monitor/
 │       ├── index.css           # Tailwind 入口 + 自定义深色主题
 │       ├── api/               # axios 请求封装
 │       ├── lib/
-│       │   └── utils.ts       # cn() 工具（clsx + tailwind-merge）
+│       │   └── utils.ts       # cn() + 时间格式化工具
 │       ├── pages/
 │       │   ├── Dashboard.tsx  # 热点流主页（Spotlight 背景）
 │       │   ├── Keywords.tsx   # 关键词管理
 │       │   └── Settings.tsx   # 通知/系统设置
 │       └── components/
-│           ├── HotCard.tsx    # 热点卡片（毛玻璃 + 动画展开）
-│           ├── Layout.tsx     # 页面布局（SparklesCore + MovingBorder）
+│           ├── HotCard.tsx    # 热点卡片（毛玻璃 + 产品化时间展示）
+│           ├── Layout.tsx     # 页面布局（状态提示 + 扫描入口）
 │           └── ui/            # Aceternity UI 组件库
 │               ├── background-gradient.tsx
 │               ├── moving-border.tsx
@@ -113,15 +113,18 @@ hot-monitor/
 
 ### 3.1 表结构
 
-#### `keywords` — 关键词监控配置
+#### `keywords` — 关键词 / 账号监控配置
 
-| 字段            | 类型        | 说明             |
-| --------------- | ----------- | ---------------- |
-| id              | INTEGER PK  | 自增主键         |
-| keyword         | TEXT UNIQUE | 关键词内容       |
-| enabled         | BOOLEAN     | 是否启用         |
-| last_checked_at | DATETIME    | 最近一次检查时间 |
-| created_at      | DATETIME    | 创建时间         |
+| 字段            | 类型        | 说明                  |
+| --------------- | ----------- | --------------------- |
+| id              | INTEGER PK  | 自增主键              |
+| keyword         | TEXT UNIQUE | 显示名称 / 关键词内容 |
+| type            | TEXT        | `keyword` / `account` |
+| platform        | TEXT        | 平台标识，可为空      |
+| account_id      | TEXT        | 平台账号 ID，可为空   |
+| enabled         | BOOLEAN     | 是否启用              |
+| last_checked_at | DATETIME    | 最近一次检查时间      |
+| created_at      | DATETIME    | 创建时间              |
 
 #### `topics` — 发现的热点内容
 
@@ -138,6 +141,16 @@ hot-monitor/
 | keyword_id    | INTEGER FK | 关联关键词（可为空，自动发现则为空） |
 | raw_content   | TEXT       | 原始抓取内容快照                     |
 | discovered_at | DATETIME   | 发现时间                             |
+
+> 说明：数据库内部仍使用 naive UTC 时间存储，对外 API 响应层统一序列化为带 `Z` 的 UTC 时间字符串。
+
+### 3.2 索引与性能
+
+- `topics.source_url`：去重与快速存在性检查
+- `topics.discovered_at`：按时间排序和最近热点查询
+- `topics.keyword_id`：关键词命中记录查询
+- `topics.heat_score`：按热度过滤与排序
+- `keywords.enabled`、`keywords.created_at`：监控项状态过滤与列表展示
 
 #### `settings` — 系统配置（KV表）
 
@@ -199,6 +212,24 @@ Response `201`:
   "enabled": true,
   "last_checked_at": null,
   "created_at": "2026-04-19T10:00:00Z"
+}
+```
+
+#### GET /api/v1/settings/status
+
+Response `200`:
+
+```json
+{
+  "scheduler_running": true,
+  "total_topics": 100,
+  "total_keywords": 2,
+  "scan_running": false,
+  "scan_started_at": "2026-04-21T08:55:40Z",
+  "scan_finished_at": "2026-04-21T08:57:01Z",
+  "last_scan_success_at": "2026-04-21T08:57:01Z",
+  "last_scan_duration_seconds": 81.0,
+  "last_scan_error": null
 }
 ```
 
@@ -264,20 +295,39 @@ Body:
 
 ## 6. 数据抓取策略
 
-### 6.1 RSS 源列表
+### 6.0 扫描编排与前端联动
+
+- 手动扫描和 APScheduler 定时扫描共用 `_run_scan_cycle()` 入口
+- 扫描期间通过 `scan_running` 防止重复触发
+- 前端根据真实扫描状态调整刷新频率，而不是固定盲刷
+- 扫描完成后统一刷新热点、关键词、命中记录和状态接口
+
+### 6.1 X/Twitter AI 热点（优先级最高）
+
+通过 Nitter 实例抓取 AI 领域关键账号动态和搜索结果：
+
+- **关键账号**：@sama、@ylecun、@karpathy、@DrJimFan、@AndrewYNg、@GoogleDeepMind、@OpenAI、@AnthropicAI
+- **搜索关键词**：AI announcement、LLM release、ChatGPT、OpenAI、Claude AI
+- **回退机制**：当所有 Nitter 实例不可用时，自动回退到 Google News RSS 搜索 AI+Twitter 相关内容（中英文双语）
+
+### 6.2 RSS 源列表
 
 ```python
 RSS_FEEDS = [
-    {"name": "OpenAI Blog",   "url": "https://openai.com/news/rss.xml"},
-    {"name": "Anthropic",     "url": "https://www.anthropic.com/rss.xml"},
-    {"name": "Google DeepMind","url": "https://deepmind.google/blog/rss.xml"},
-    {"name": "HuggingFace",   "url": "https://huggingface.co/blog/feed.xml"},
-    {"name": "TechCrunch AI", "url": "https://techcrunch.com/category/artificial-intelligence/feed/"},
-    {"name": "VentureBeat AI","url": "https://venturebeat.com/category/ai/feed/"},
+    {"name": "OpenAI Blog",    "url": "https://openai.com/news/rss.xml"},
+    {"name": "Google DeepMind", "url": "https://deepmind.google/blog/rss.xml"},
+    {"name": "HuggingFace",    "url": "https://huggingface.co/blog/feed.xml"},
+    {"name": "TechCrunch AI",  "url": "https://techcrunch.com/category/artificial-intelligence/feed/"},
+    {"name": "VentureBeat AI", "url": "https://venturebeat.com/category/ai/feed/"},
+    {"name": "机器之心",        "url": "https://www.jiqizhixin.com/rss"},
+    {"name": "量子位",          "url": "https://www.qbitai.com/feed"},
+    {"name": "36氪AI",         "url": "https://36kr.com/feed?cid=venture"},
 ]
 ```
 
-### 6.2 Hacker News API
+> 已移除 Anthropic RSS（404）和 ArXiv AI/ML（学术论文非实时热点）。
+
+### 6.3 Hacker News API
 
 ```python
 # 获取 Top Stories（免费，无需 API Key）
@@ -285,18 +335,35 @@ GET https://hacker-news.firebaseio.com/v0/topstories.json
 GET https://hacker-news.firebaseio.com/v0/item/{id}.json
 ```
 
-每次抓取前 30 条，过滤评分 ≥ 50 的条目，再调用 AI 分析。
+每次抓取前 30 条，过滤评分 ≥ 50 的条目。
 
-### 6.3 DuckDuckGo 搜索
-
-使用 `duckduckgo_search` Python 库（无需 API Key）：
+### 6.4 Reddit
 
 ```python
-from duckduckgo_search import DDGS
-
-with DDGS() as ddgs:
-    results = list(ddgs.news(keyword, max_results=10, timelimit='d'))
+# 抓取热门帖子（JSON API）
+GET https://www.reddit.com/r/MachineLearning/hot.json?limit=20
+GET https://www.reddit.com/r/artificial/hot.json?limit=20
 ```
+
+### 6.5 GitHub Trending
+
+解析 GitHub Trending 页面，获取每日热门仓库。
+
+### 6.6 搜索引擎
+
+- **DuckDuckGo**：`duckduckgo_search` Python 库（无需 API Key）
+- **Bing News**：`https://www.bing.com/news/search?q={keyword}&format=rss`
+
+### 6.7 内容质量保障
+
+- 扫描阶段先做来源聚合与预去重，减少无效 AI 分析调用
+- 关键词监控使用受控并发，降低整轮扫描耗时
+- UI 动效组件支持 reduced motion / 静态退化，减少常驻动画成本
+
+- **48 小时时效性过滤**：`published_at` 早于当前时间 48 小时的内容在 AI 分析前自动丢弃
+- **URL 去重**：新抓取内容与数据库已有 URL 去重，避免重复分析
+- **并行抓取 + 并发 AI 分析**：所有数据源并行抓取（`asyncio.gather`），AI 分析使用 `Semaphore(5)` 控制并发
+- **AI 时效性评分**：提示词明确区分 8-10 分（重大突破）、6-7 分（新动态）、4-5 分（一般）、1-3 分（旧闻/低价值）
 
 ---
 
@@ -442,17 +509,17 @@ async def send_email(subject: str, body_html: str):
 
 ### Phase 1：Web 版（已完成 ✓）
 
-| 步骤   | 内容                                            | 状态 |
-| ------ | ----------------------------------------------- | ---- |
-| Step 1 | 项目结构 + 依赖 + 环境配置                      | ✓    |
-| Step 2 | 数据库模型 + SQLite 初始化                      | ✓    |
-| Step 3 | RSS/HN/DDG 数据抓取服务                         | ✓    |
-| Step 4 | OpenRouter AI 分析模块                          | ✓    |
-| Step 5 | APScheduler 定时任务                            | ✓    |
-| Step 6 | 邮件通知服务                                    | ✓    |
-| Step 7 | FastAPI 完整路由                                | ✓    |
-| Step 8 | React 前端 Dashboard（Aceternity UI 深色仪表盘）| ✓    |
-| Step 9 | 前后端联调 + 测试                               | ✓    |
+| 步骤   | 内容                                             | 状态 |
+| ------ | ------------------------------------------------ | ---- |
+| Step 1 | 项目结构 + 依赖 + 环境配置                       | ✓    |
+| Step 2 | 数据库模型 + SQLite 初始化                       | ✓    |
+| Step 3 | RSS/HN/DDG 数据抓取服务                          | ✓    |
+| Step 4 | OpenRouter AI 分析模块                           | ✓    |
+| Step 5 | APScheduler 定时任务                             | ✓    |
+| Step 6 | 邮件通知服务                                     | ✓    |
+| Step 7 | FastAPI 完整路由                                 | ✓    |
+| Step 8 | React 前端 Dashboard（Aceternity UI 深色仪表盘） | ✓    |
+| Step 9 | 前后端联调 + 测试                                | ✓    |
 
 ### Phase 2：Agent Skills（后续迭代）
 

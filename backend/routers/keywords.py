@@ -20,7 +20,9 @@ async def create_keyword(payload: KeywordCreate, db: AsyncSession = Depends(get_
     existing = await db.execute(select(Keyword).where(Keyword.keyword == payload.keyword))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="关键词已存在")
-    kw = Keyword(keyword=payload.keyword, enabled=payload.enabled)
+    kw = Keyword(keyword=payload.keyword, enabled=payload.enabled,
+                 type=payload.type, platform=payload.platform,
+                 account_id=payload.account_id)
     db.add(kw)
     await db.commit()
     await db.refresh(kw)
@@ -36,6 +38,12 @@ async def update_keyword(kw_id: int, payload: KeywordUpdate, db: AsyncSession = 
         kw.keyword = payload.keyword
     if payload.enabled is not None:
         kw.enabled = payload.enabled
+    if payload.type is not None:
+        kw.type = payload.type
+    if payload.platform is not None:
+        kw.platform = payload.platform
+    if payload.account_id is not None:
+        kw.account_id = payload.account_id
     await db.commit()
     await db.refresh(kw)
     return kw

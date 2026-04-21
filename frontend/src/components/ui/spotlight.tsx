@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { motion, useAnimation } from "framer-motion";
+import { motion, useAnimation, useReducedMotion } from "framer-motion";
 import { cn } from "../../lib/utils";
 
 export const Spotlight = ({
@@ -29,6 +29,7 @@ export const Spotlight = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const controls = useAnimation();
   const [mounted, setMounted] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     setMounted(true);
@@ -36,6 +37,10 @@ export const Spotlight = ({
 
   useEffect(() => {
     if (!mounted) return;
+    if (shouldReduceMotion) {
+      controls.set({ x: 0 });
+      return;
+    }
     const runAnimation = async () => {
       await controls.start({
         x: [0, xOffset, -xOffset, 0],
@@ -48,7 +53,7 @@ export const Spotlight = ({
       });
     };
     runAnimation();
-  }, [mounted, controls, duration, xOffset]);
+  }, [mounted, controls, duration, shouldReduceMotion, xOffset]);
 
   return (
     <motion.div

@@ -2,6 +2,11 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { type Topic } from "../api/client";
 import {
+  formatAbsoluteTime,
+  formatFullTime,
+  formatProductTime,
+} from "../lib/utils";
+import {
   ExternalLink,
   Flame,
   ChevronDown,
@@ -20,16 +25,6 @@ function getHeatLevel(score: number) {
   if (score >= 7) return { label: "HIGH", cls: "badge-high" };
   if (score >= 5) return { label: "MED", cls: "badge-med" };
   return { label: "LOW", cls: "badge-low" };
-}
-
-function timeAgo(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "刚刚";
-  if (m < 60) return `${m} 分钟前`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} 小时前`;
-  return `${Math.floor(h / 24)} 天前`;
 }
 
 export function HotCard({ topic, animate = false }: HotCardProps) {
@@ -126,8 +121,18 @@ export function HotCard({ topic, animate = false }: HotCardProps) {
         className="flex items-center gap-3 text-xs pt-2.5 text-slate-600"
         style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}
       >
-        <Clock size={11} />
-        <span>抓取 {timeAgo(topic.discovered_at)}</span>
+        <div
+          className="min-w-0"
+          title={`抓取时间：${formatFullTime(topic.discovered_at)}`}
+        >
+          <div className="flex items-center gap-1.5">
+            <Clock size={11} />
+            <span>{formatProductTime(topic.discovered_at)}</span>
+          </div>
+          <div className="pl-[17px] text-[11px] text-slate-700">
+            {formatAbsoluteTime(topic.discovered_at)}
+          </div>
+        </div>
 
         {topic.tags.length > 2 && (
           <span className="text-slate-700">+{topic.tags.length - 2} 标签</span>

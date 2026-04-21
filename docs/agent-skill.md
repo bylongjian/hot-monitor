@@ -5,13 +5,14 @@
 `hot-monitor` 是一个面向 AI 编程博主的热点话题监控助手。该 Skill 可以：
 
 - 查询当前采集到的 AI 技术热点列表（按热度排序）
-- 添加/删除关键词监控
+- 添加/删除关键词或账号监控
 - 手动触发一次全量扫描
 - 查看系统运行状态
 
 ## 调用方式（HTTP API）
 
 服务默认运行于 `http://localhost:8000`，所有接口前缀为 `/api/v1`。
+如果 8000 端口被占用，也可切到 `http://localhost:8001`。
 
 ### 1. 查询热点话题
 
@@ -39,7 +40,7 @@ GET /api/v1/topics?limit=20&min_heat=5
     "heat_score": 8,
     "tags": ["Claude", "AI Safety"],
     "is_notified": false,
-    "discovered_at": "2026-04-19T09:12:52"
+    "discovered_at": "2026-04-19T09:12:52Z"
   }
 ]
 ```
@@ -56,13 +57,36 @@ POST /api/v1/topics/scan
 { "message": "扫描任务已触发，正在后台执行", "triggered": true }
 ```
 
+如果已有扫描在执行中，接口会返回：
+
+```json
+{ "message": "已有扫描正在执行", "triggered": false }
+```
+
 ### 3. 关键词管理
 
 ```
 GET    /api/v1/keywords          # 列出所有关键词
-POST   /api/v1/keywords          # 添加关键词 body: {"keyword": "GPT-5", "enabled": true}
+POST   /api/v1/keywords          # 添加关键词或账号
 PATCH  /api/v1/keywords/{id}     # 更新关键词
 DELETE /api/v1/keywords/{id}     # 删除关键词
+```
+
+关键词示例：
+
+```json
+{ "keyword": "GPT-5", "type": "keyword" }
+```
+
+账号示例：
+
+```json
+{
+  "keyword": "OpenAI 官方",
+  "type": "account",
+  "platform": "twitter",
+  "account_id": "openai"
+}
 ```
 
 ### 4. 系统状态
@@ -76,9 +100,14 @@ GET /api/v1/settings/status
 ```json
 {
   "scheduler_running": true,
-  "next_run": "2026-04-19T18:10:44+08:00",
   "total_topics": 67,
-  "total_keywords": 5
+  "total_keywords": 5,
+  "scan_running": false,
+  "scan_started_at": "2026-04-21T08:55:40Z",
+  "scan_finished_at": "2026-04-21T08:57:01Z",
+  "last_scan_success_at": "2026-04-21T08:57:01Z",
+  "last_scan_duration_seconds": 81.0,
+  "last_scan_error": null
 }
 ```
 
@@ -107,7 +136,7 @@ tools:
     url: http://localhost:8000/api/v1/keywords
     body:
       keyword: "{{keyword}}"
-      enabled: true
+      type: keyword
 
   - name: system_status
     description: 查看热点监控系统运行状态

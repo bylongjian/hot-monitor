@@ -11,6 +11,9 @@ export interface Keyword {
   id: number;
   keyword: string;
   enabled: boolean;
+  type: "keyword" | "account";
+  platform: string | null;
+  account_id: string | null;
   last_checked_at: string | null;
   created_at: string;
 }
@@ -36,6 +39,7 @@ export interface Settings {
   smtp_user: string;
   ai_model: string;
   notify_heat_threshold: number;
+  min_heat_score: number;
 }
 
 export interface StatusOut {
@@ -43,16 +47,35 @@ export interface StatusOut {
   next_run: string | null;
   total_topics: number;
   total_keywords: number;
+  scan_running: boolean;
+  scan_started_at: string | null;
+  scan_finished_at: string | null;
+  last_scan_success_at: string | null;
+  last_scan_duration_seconds: number | null;
+  last_scan_error: string | null;
 }
 
 // ─── Keywords API ─────────────────────────────────────────────────────────────
 
 export const keywordsApi = {
   list: () => api.get<Keyword[]>("/keywords").then((r) => r.data),
-  create: (keyword: string, enabled = true) =>
-    api.post<Keyword>("/keywords", { keyword, enabled }).then((r) => r.data),
-  update: (id: number, data: Partial<{ keyword: string; enabled: boolean }>) =>
-    api.patch<Keyword>(`/keywords/${id}`, data).then((r) => r.data),
+  create: (data: {
+    keyword: string;
+    enabled?: boolean;
+    type?: "keyword" | "account";
+    platform?: string;
+    account_id?: string;
+  }) => api.post<Keyword>("/keywords", data).then((r) => r.data),
+  update: (
+    id: number,
+    data: Partial<{
+      keyword: string;
+      enabled: boolean;
+      type: "keyword" | "account";
+      platform: string;
+      account_id: string;
+    }>,
+  ) => api.patch<Keyword>(`/keywords/${id}`, data).then((r) => r.data),
   delete: (id: number) => api.delete(`/keywords/${id}`),
   hits: (id: number) =>
     api.get<Topic[]>(`/keywords/${id}/hits`).then((r) => r.data),

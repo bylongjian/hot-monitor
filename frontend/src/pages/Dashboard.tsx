@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { topicsApi, keywordsApi } from "../api/client";
 import { HotCard } from "../components/HotCard";
@@ -57,7 +57,7 @@ function StatCard({
 
   if (accent && value > 0) {
     return (
-      <BackgroundGradient containerClassName="rounded-xl">
+      <BackgroundGradient containerClassName="rounded-xl" animate={false}>
         {inner}
       </BackgroundGradient>
     );
@@ -73,11 +73,17 @@ function StatCard({
 export function Dashboard() {
   const [sort, setSort] = useState<SortKey>("newest");
   const [minHeat, setMinHeat] = useState<number | null>(null);
+  const [visibleCount, setVisibleCount] = useState(30);
 
-  const { data: topics = [], isLoading } = useQuery({
+  const {
+    data: topics = [],
+    isLoading,
+    isError: isTopicsError,
+  } = useQuery({
     queryKey: ["topics"],
     queryFn: () => topicsApi.list({ limit: 100 }),
-    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
+    staleTime: 30000,
   });
 
   const { data: keywords = [] } = useQuery({
@@ -129,8 +135,14 @@ export function Dashboard() {
     return result;
   }, [topics, sort, minHeat]);
 
+  useEffect(() => {
+    setVisibleCount(30);
+  }, [sort, minHeat]);
+
   const hasFilter = minHeat !== null;
   const filterCount = hasFilter ? 1 : 0;
+  const visibleTopics = filteredTopics.slice(0, visibleCount);
+  const hasMoreTopics = filteredTopics.length > visibleCount;
 
   const resetFilters = () => {
     setMinHeat(null);
@@ -180,7 +192,7 @@ export function Dashboard() {
           <Flame size={15} className="text-orange-400" />
           实时热点流
         </h2>
-        <span className="text-xs text-slate-600">每 30 分钟自动更新</span>
+        <span className="text-xs text-slate-600">扫描完成后自动刷新</span>
       </div>
 
       {/* ── Sort + Filter Bar ── */}
@@ -285,6 +297,17 @@ export function Dashboard() {
             />
           ))}
         </div>
+      ) : isTopicsError ? (
+        <div
+          className="text-center py-20 rounded-xl relative z-10"
+          style={{
+            background: "rgba(127,29,29,0.12)",
+            border: "1px solid rgba(248,113,113,0.15)",
+          }}
+        >
+          <AlertTriangle size={32} className="mx-auto mb-3 text-red-400/70" />
+          <p className="text-sm text-red-200">热点加载失败，请稍后重试</p>
+        </div>
       ) : filteredTopics.length === 0 ? (
         <div
           className="text-center py-20 rounded-xl relative z-10"
@@ -300,9 +323,17 @@ export function Dashboard() {
         </div>
       ) : (
         <div className="space-y-2 relative z-10">
-          {filteredTopics.map((topic, i) => (
+          {visibleTopics.map((topic, i) => (
             <HotCard key={topic.id} topic={topic} animate={i < 5} />
           ))}
+          {hasMoreTopics && (
+            <button
+              onClick={() => setVisibleCount((count) => count + 20)}
+              className="hp-btn hp-btn-ghost w-full justify-center"
+            >
+              继续加载更多热点
+            </button>
+          )}
         </div>
       )}
     </div>

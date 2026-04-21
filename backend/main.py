@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 import logging
+import sys
+import asyncio
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -23,6 +25,22 @@ FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Windows: 静默处理 ProactorEventLoop 的 ConnectionResetError
+    if sys.platform == "win32":
+        loop = asyncio.get_running_loop()
+        _orig = loop.get_exception_handler()
+
+        def _quiet_reset(l, ctx):
+            exc = ctx.get("exception")
+            if isinstance(exc, ConnectionResetError):
+                return
+            if _orig:
+                _orig(l, ctx)
+            else:
+                l.default_exception_handler(ctx)
+
+        loop.set_exception_handler(_quiet_reset)
+
     # 启动时
     logger.info("hot-monitor 正在启动...")
     await init_db()
