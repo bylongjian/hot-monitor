@@ -1,8 +1,8 @@
-# hot-monitor 技术方案文档
+# AI热点情报台 — 技术方案文档
 
-> 版本：v1.5  
+> 版本：v1.6  
 > 日期：2026-04-21  
-> 状态：Phase 1 已完成，已补齐扫描状态流、性能优化、账号监控、时间展示统一，并完成热点详情信息增强
+> 状态：Phase 1 已完成，已补齐扫描状态流、性能优化、账号监控、时间展示统一、热点情报台 UI 重构，并整理为可支撑后续 skills 封装的技术说明
 
 ---
 
@@ -90,12 +90,12 @@ hot-monitor/
 │       ├── lib/
 │       │   └── utils.ts       # cn() + 时间格式化工具
 │       ├── pages/
-│       │   ├── Dashboard.tsx  # 热点流主页（Spotlight 背景）
-│       │   ├── Keywords.tsx   # 关键词管理
-│       │   └── Settings.tsx   # 通知/系统设置
+│       │   ├── Dashboard.tsx  # 热点雷达主页（战情摘要 + 视图控制台 + 热点流）
+│       │   ├── Keywords.tsx   # 监控词编排台
+│       │   └── Settings.tsx   # 系统控制室
 │       └── components/
-│           ├── HotCard.tsx    # 热点卡片（毛玻璃 + 产品化时间展示）
-│           ├── Layout.tsx     # 页面布局（状态提示 + 扫描入口）
+│           ├── HotCard.tsx    # 热点情报卡（高密度信息 + 可展开详情）
+│           ├── Layout.tsx     # 页面壳层（热点情报台 + 状态面板 + 刷新热点入口）
 │           └── ui/            # Aceternity UI 组件库
 │               ├── background-gradient.tsx
 │               ├── moving-border.tsx
@@ -128,24 +128,24 @@ hot-monitor/
 
 #### `topics` — 发现的热点内容
 
-| 字段          | 类型       | 说明                                 |
-| ------------- | ---------- | ------------------------------------ |
-| id            | INTEGER PK | 自增主键                             |
-| title         | TEXT       | 热点标题                             |
-| summary       | TEXT       | AI 生成摘要（中文，≤100字）          |
-| source_url    | TEXT       | 原始链接                             |
-| source_name   | TEXT       | 来源名称（HN / OpenAI Blog 等）      |
-| heat_score    | INTEGER    | AI 热度评分（1-10）                  |
-| tags          | TEXT       | JSON 数组，如 ["GPT-5", "OpenAI"]    |
-| is_notified   | BOOLEAN    | 是否已发送通知                       |
-| keyword_id    | INTEGER FK | 关联关键词（可为空，自动发现则为空） |
-| raw_content   | TEXT       | 原始抓取内容快照                     |
-| published_at  | DATETIME   | 原始发布时间，可为空                 |
-| relevance_score | INTEGER  | AI 关键词相关性评分，可为空          |
-| relevance_reason | TEXT    | AI 相关性理由，可为空                |
-| engagement    | TEXT       | 统一互动指标 JSON，可为空            |
-| source_metrics | TEXT      | 来源专属互动指标 JSON，可为空        |
-| discovered_at | DATETIME   | 发现时间                             |
+| 字段             | 类型       | 说明                                 |
+| ---------------- | ---------- | ------------------------------------ |
+| id               | INTEGER PK | 自增主键                             |
+| title            | TEXT       | 热点标题                             |
+| summary          | TEXT       | AI 生成摘要（中文，≤100字）          |
+| source_url       | TEXT       | 原始链接                             |
+| source_name      | TEXT       | 来源名称（HN / OpenAI Blog 等）      |
+| heat_score       | INTEGER    | AI 热度评分（1-10）                  |
+| tags             | TEXT       | JSON 数组，如 ["GPT-5", "OpenAI"]    |
+| is_notified      | BOOLEAN    | 是否已发送通知                       |
+| keyword_id       | INTEGER FK | 关联关键词（可为空，自动发现则为空） |
+| raw_content      | TEXT       | 原始抓取内容快照                     |
+| published_at     | DATETIME   | 原始发布时间，可为空                 |
+| relevance_score  | INTEGER    | AI 关键词相关性评分，可为空          |
+| relevance_reason | TEXT       | AI 相关性理由，可为空                |
+| engagement       | TEXT       | 统一互动指标 JSON，可为空            |
+| source_metrics   | TEXT       | 来源专属互动指标 JSON，可为空        |
+| discovered_at    | DATETIME   | 发现时间                             |
 
 > 说明：数据库内部仍使用 naive UTC 时间存储，对外 API 响应层统一序列化为带 `Z` 的 UTC 时间字符串；`source_type` 为响应层派生字段，不单独落库。
 
@@ -255,6 +255,7 @@ Response `200`:
 ```json
 {
   "scheduler_running": true,
+  "next_run": "2026-04-21T09:55:00Z",
   "total_topics": 100,
   "total_keywords": 2,
   "scan_running": false,
@@ -265,6 +266,19 @@ Response `200`:
   "last_scan_error": null
 }
 ```
+
+### 4.3 面向 Skills 封装的接口映射
+
+建议把能力按意图分成 4 组，而不是按页面分组：
+
+| 技能意图       | 推荐接口                                                                   | 典型动作                                           | 备注                      |
+| -------------- | -------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------- |
+| 查询热点       | `GET /api/v1/topics`、`GET /api/v1/topics/{id}`                            | 列表读取、按热度筛选、按命中模式筛选、查看单条详情 | 查询类 skill 的主干       |
+| 管理监控       | `GET/POST/PATCH/DELETE /api/v1/keywords`、`GET /api/v1/keywords/{id}/hits` | 新增关键词、启停监控、删除监控、查看命中历史       | 变更前最好先定位目标条目  |
+| 配置系统       | `GET/PUT /api/v1/settings`、`POST /api/v1/settings/test-email`             | 读取当前设置、更新扫描频率、更新通知参数、测试邮件 | 配置 skill 需要回显生效值 |
+| 触发与观测扫描 | `POST /api/v1/topics/scan`、`GET /api/v1/settings/status`                  | 手动触发扫描、轮询扫描状态、读取调度器状态         | 可组合成“刷新热点”工作流  |
+
+推荐将 base URL 设计为可配置项：默认 `http://localhost:8000`，备用 `http://localhost:8001`。
 
 ---
 
@@ -465,19 +479,18 @@ async def send_email(subject: str, body_html: str):
 
 ## 9. 前端 UI 设计规格
 
-### 9.1 设计风格：HotPulse 深空科技仪表盘
+### 9.1 设计风格：AI热点情报台 深色情报台
 
-- **背景色**：`#030712`（纯黑深空），叠加 60px 网格线（`rgba(255,255,255,0.02)`）
-- **品牌名**：HotPulse（顶部导航栏，渐变文字 `from-blue-400 via-cyan-400 to-blue-300`，Logo 上方叠加 SparklesCore 粒子效果）
-- **卡片**：极低透明度背景 `rgba(255,255,255,0.025)` + 边框 `0.06` 不透明度 + 圆角 14px，悬停时微光效果
-- **顶部导航**：`rgba(3,7,18,0.88)` + `backdrop-blur(16px) saturate(180%)`，磨砂质感
-- **核心按钮**：MovingBorder 动态渐变边框动画（蓝→青色光带流动）
-- **Dashboard 背景**：Spotlight 组件产生大面积柔和光晕
-- **紧急热点卡片**：顶部渐变指示线 + 外发光阴影
-- **统计卡片**：紧急热点使用 BackgroundGradient 组件包裹（蓝/青/紫/绿四色辐射渐变流动）
-- **动画引擎**：framer-motion，所有展开/折叠/入场使用 AnimatePresence
-- **尊重 `prefers-reduced-motion`**：禁用所有动画的回退方案
-- **移动端**：底部 Tab 导航（热点雷达 / 监控词 / 设置），ActiveIndicator 使用 cyan-400
+- **背景基调**：深色信息台，保留细网格和弱光晕，但降低旧版“炫技仪表盘”感
+- **品牌名**：`AI热点情报台`，页面头部用于强调产品身份；顶部辅标继续承担模块语义提示
+- **卡片**：半透明深色面板 + 低对比边框 + 柔和阴影，优先服务信息密度与阅读效率
+- **顶部导航**：磨砂信息条结构，集中展示导航、调度器状态、扫描状态、监控规模和主操作
+- **核心按钮**：主按钮文案统一为“刷新热点”，继续使用 MovingBorder 保持识别度
+- **Dashboard 背景**：Spotlight 仅作为弱环境光，避免压过列表信息本身
+- **热点卡片**：强调热度、来源、时间、摘要、相关性和原始线索，支持就地展开而不是强依赖跳转
+- **动画引擎**：framer-motion，动效以低频、低幅值为原则
+- **尊重 `prefers-reduced-motion`**：保留静态回退方案
+- **移动端**：继续使用底部 Tab 导航，保证热点雷达 / 监控词 / 设置三段主流程可达
 
 ### 9.2 Aceternity UI 组件
 

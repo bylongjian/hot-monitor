@@ -42,20 +42,20 @@ async def lifespan(app: FastAPI):
         loop.set_exception_handler(_quiet_reset)
 
     # 启动时
-    logger.info("hot-monitor 正在启动...")
+    logger.info("AI热点情报台 正在启动...")
     await init_db()
     cfg = get_settings()
     start_scheduler(scan_interval_minutes=cfg.DEFAULT_SCAN_INTERVAL)
-    logger.info("hot-monitor 启动完成 ✓")
+    logger.info("AI热点情报台 启动完成 ✓")
     yield
     # 关闭时
     stop_scheduler()
-    logger.info("hot-monitor 已关闭")
+    logger.info("AI热点情报台 已关闭")
 
 
 app = FastAPI(
-    title="hot-monitor API",
-    description="AI 热点监控工具 API",
+    title="AI热点情报台 API",
+    description="AI热点情报台后端 API",
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/api/docs",
@@ -88,7 +88,7 @@ else:
     @app.get("/", include_in_schema=False)
     async def root():
         return {
-            "message": "hot-monitor API running",
+            "message": "AI热点情报台 API running",
             "docs": "/api/docs",
             "note": "前端尚未构建，请运行 cd frontend && npm install && npm run build",
         }

@@ -30,7 +30,7 @@ def _build_email_html(topic_data: dict) -> str:
   <div style="max-width:600px;margin:0 auto;background:#12121a;border:1px solid #00d4ff33;border-radius:12px;padding:24px">
     <div style="display:flex;align-items:center;margin-bottom:16px">
       <span style="font-size:24px;margin-right:8px">🔥</span>
-      <h1 style="color:#00d4ff;font-size:20px;margin:0">hot-monitor 热点通知</h1>
+      <h1 style="color:#00d4ff;font-size:20px;margin:0">AI热点情报台 热点通知</h1>
     </div>
     <div style="background:#ffffff0a;border-left:3px solid #00d4ff;padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:16px">
       <p style="margin:0 0 4px;font-size:16px;font-weight:600">{title}</p>
@@ -45,7 +45,7 @@ def _build_email_html(topic_data: dict) -> str:
     </div>
     <a href="{url}" style="display:inline-block;background:#00d4ff;color:#0a0a0f;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px">查看原文 →</a>
     <hr style="border:none;border-top:1px solid #ffffff15;margin:24px 0">
-    <p style="color:#555;font-size:12px;margin:0">由 hot-monitor 自动发送 | <a href="http://localhost:8000" style="color:#00d4ff55">打开 Dashboard</a></p>
+    <p style="color:#555;font-size:12px;margin:0">由 AI热点情报台 自动发送 | <a href="http://localhost:8000" style="color:#00d4ff55">打开 Dashboard</a></p>
   </div>
 </body>
 </html>"""
@@ -86,10 +86,10 @@ async def send_notification_email(topic_data: dict) -> bool:
 async def send_test_email() -> bool:
     """发送测试邮件"""
     return await send_notification_email({
-        "title": "✅ hot-monitor 通知测试",
+        "title": "✅ AI热点情报台 通知测试",
         "summary": "如果你看到此邮件，说明邮件通知配置正确！",
         "source_url": "http://localhost:8000",
-        "source_name": "hot-monitor",
+        "source_name": "AI热点情报台",
         "heat_score": 10,
         "tags": ["测试", "通知"],
         "trigger_keyword": "",

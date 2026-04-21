@@ -1,4 +1,4 @@
-# hot-monitor / HotPulse 快速启动
+# AI热点情报台 快速启动
 
 > AI 编程博主专属热点监控工具，自动发现 AI 领域热点并推送通知。
 > 默认 AI 模型：`deepseek/deepseek-v3.2`（via OpenRouter）
@@ -18,6 +18,18 @@
 - 热点时间展示优化：优先显示真实发布时间，拿不到时明确回退到抓取时间；后端统一输出 UTC
 - 动效降噪：保留科技感，但对常驻动画做了减负并兼容 reduced motion
 - SQLite 索引优化：热点、关键词、命中记录查询更稳定
+
+## 文档导航
+
+如果下一步要做 skills 封装，建议按下面顺序阅读：
+
+- [README.md](README.md)：项目总览、启动方式、核心功能与当前产品命名
+- [docs/requirements.md](docs/requirements.md)：需求边界、用户意图、适合抽成 skill 的能力清单
+- [docs/design.md](docs/design.md)：真实后端接口、数据结构、状态字段与技能封装映射
+- [docs/agent-skill.md](docs/agent-skill.md)：面向 skill 草稿的能力定义、触发语句、参数映射与工作流示例
+- [frontend/README.md](frontend/README.md)：前端页面语义、页面命名和交互分区说明
+
+> 面向 skill 封装时，接口字段与请求约束请以 [docs/design.md](docs/design.md) 和后端实际实现为准，UI 文案只作为语义参考。
 
 ## 前置要求
 

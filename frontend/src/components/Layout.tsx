@@ -221,7 +221,7 @@ export function Layout({ children, status }: LayoutProps) {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                       <p className="text-lg font-semibold tracking-tight text-white">
-                        HotPulse
+                        AI热点情报台
                       </p>
                       <span className="inline-flex items-center gap-1 rounded-full border border-cyan-400/15 bg-cyan-400/10 px-2 py-0.5 text-[11px] font-medium text-cyan-100">
                         <Radar size={11} />

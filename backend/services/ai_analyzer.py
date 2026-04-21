@@ -21,7 +21,7 @@ def _call_openrouter(messages: list[dict], max_tokens: int = 512) -> str | None:
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://github.com/hot-monitor",
-        "X-OpenRouter-Title": "hot-monitor",
+        "X-OpenRouter-Title": "AI热点情报台",
     }
     body = {
         "model": settings.AI_MODEL,
