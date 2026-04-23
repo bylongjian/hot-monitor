@@ -5,6 +5,9 @@
 
 ## 当前版本亮点
 
+- Agent Skill 已落地：新增工作区原生 Skill 包，路径为 `.github/skills/hot-monitor/`，封装查热点、管监控、配系统、触发扫描四类能力
+- Skill 执行面统一：优先通过本地 HTTP API 调用后端，不依赖前端页面点击，兼容 `8000` / `8001` 端口探测
+- Skill 联测已完成：已验证状态读取、热点查询、监控新增删除、扫描触发和设置更新等主链路
 - 指挥台式首页重构：顶部升级为“热点情报台”，把调度器、扫描状态、监控规模和主操作集中到同一视区
 - 页面层级重做：热点雷达、监控词和设置页统一为更克制的深色科技风信息台，减少传统后台式堆叠感
 - 热点详情增强：卡片新增来源类型、已推送状态、发布时间回退、互动指标与 AI 相关性分数
@@ -26,10 +29,28 @@
 - [README.md](README.md)：项目总览、启动方式、核心功能与当前产品命名
 - [docs/requirements.md](docs/requirements.md)：需求边界、用户意图、适合抽成 skill 的能力清单
 - [docs/design.md](docs/design.md)：真实后端接口、数据结构、状态字段与技能封装映射
-- [docs/agent-skill.md](docs/agent-skill.md)：面向 skill 草稿的能力定义、触发语句、参数映射与工作流示例
+- [docs/agent-skill.md](docs/agent-skill.md)：当前 Skill 封装说明、触发语句、参数映射与工作流示例
+- [.github/skills/hot-monitor/SKILL.md](.github/skills/hot-monitor/SKILL.md)：工作区原生 Agent Skill 主文件
 - [frontend/README.md](frontend/README.md)：前端页面语义、页面命名和交互分区说明
 
 > 面向 skill 封装时，接口字段与请求约束请以 [docs/design.md](docs/design.md) 和后端实际实现为准，UI 文案只作为语义参考。
+
+## Agent Skill
+
+项目已提供工作区原生 Agent Skill，目录如下：
+
+- `.github/skills/hot-monitor/SKILL.md`
+- `.github/skills/hot-monitor/references/api-contract.md`
+- `.github/skills/hot-monitor/evals/evals.json`
+
+当前 Skill 已封装并联测通过的能力包括：
+
+- 查询热点列表与热点详情
+- 新增、启停、删除监控词或账号监控
+- 读取和更新系统配置
+- 手动触发扫描并读取扫描状态
+
+当前联测覆盖了本地 `http://localhost:8000` 服务上的核心链路：状态接口、热点查询、监控新增删除、扫描触发和设置更新。测试邮件接口因会产生真实外部副作用，默认不在自动联测中直接执行。
 
 ## 前置要求
 

@@ -1,6 +1,34 @@
-# AI热点情报台 Skill 封装草稿
+# AI热点情报台 Skill 封装说明
 
-> 目的：这份文档不是最终的 SKILL.md，而是为下一步封装 `.prompt.md` / `SKILL.md` 准备的能力规格说明。
+> 目的：这份文档用于说明当前已落地的工作区原生 Skill 封装结果，并保留能力边界、触发语句、参数映射与工作流示例，供后续维护与扩展参考。
+
+## 当前落地状态
+
+当前项目已经落地 1 个工作区原生 Agent Skill：
+
+- `.github/skills/hot-monitor/SKILL.md`
+
+随包附带文件：
+
+- `.github/skills/hot-monitor/references/api-contract.md`
+- `.github/skills/hot-monitor/evals/evals.json`
+
+当前封装策略：
+
+- 使用 1 个总 Skill 覆盖“查热点 / 管监控 / 配系统 / 触发扫描”四类意图
+- 优先通过本地 HTTP API 执行，不依赖前端 UI 点击
+- 兼容 `http://localhost:8000` 与 `http://localhost:8001` 两个端口
+- 删除监控项时要求二次确认
+
+已完成的联测范围：
+
+- 状态读取
+- 热点查询
+- 监控新增与删除
+- 扫描触发
+- 设置更新
+
+测试邮件未纳入自动联测默认步骤，因为会产生真实外部副作用。
 
 ## 1. Skill 目标
 
